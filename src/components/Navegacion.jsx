@@ -5,7 +5,7 @@ function Navegacion() {
     <Navbar expand="lg" bg="dark" data-bs-theme="dark" className="border-bottom border-secondary">
       <Container>
         <Navbar.Brand href="#inicio" className="fw-bold text-white">
-          Los Maestros
+
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="menu-principal" aria-label="Abrir menú" />
         <Navbar.Collapse id="menu-principal">

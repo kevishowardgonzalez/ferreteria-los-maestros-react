@@ -44,8 +44,8 @@ function App() {
           <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
             <div>
               <h2 className="h3 fw-bold mb-1">Catálogo de Productos</h2>
-              <p className="text-muted mb-0">
-                Materiales y herramientas con entrega inmediata en La Serena.
+              <p className="h9 fw-bold mb-1">
+                Materiales y herramientas con entrega inmediata en La Serena
               </p>
             </div>
 
