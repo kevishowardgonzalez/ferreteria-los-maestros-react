@@ -1,231 +1,123 @@
-import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
-import { Row, Col, Form } from "react-bootstrap";
 
+import { useState, useEffect } from "react";
+import { Routes, Route, Link } from "react-router-dom";
 import Cabecera from "./components/Cabecera";
 import Navegacion from "./components/Navegacion";
-import Bienvenida from "./components/Bienvenida";
-import TarjetaProducto from "./components/TarjetaProducto";
 import PiePagina from "./components/PiePagina";
-
+import Bienvenida from "./components/Bienvenida";
+import Catalogo from "./pages/Catalogo";
+import DetalleProducto from "./pages/DetalleProducto";
 import Carrito from "./pages/Carrito";
 import Checkout from "./pages/Checkout";
-import DetalleProducto from "./pages/DetalleProducto";
+import AdminProductos from "./pages/admin/AdminProductos";
 import NoEncontrada from "./pages/NoEncontrada";
-
-import { productos } from "./data/productos";
+import Nosotros from "./pages/Nosotros";
+import Blogs from "./pages/Blogs";
+import Contacto from "./pages/Contacto";
+import { productos as listaInicial } from "./data/productos";
+import { guardarCarrito } from "./utils/persistencia";
+import { Form, Button } from "react-bootstrap";
 
 function App() {
-
-  // Estado para filtrar los productos
+  const [productos] = useState(listaInicial);
   const [categoria, setCategoria] = useState("Todas");
-
-  // Recuperar el carrito desde localStorage
   const [carrito, setCarrito] = useState(() => {
     const guardados = localStorage.getItem("carrito_los_maestros");
-
-    const lista = guardados ? JSON.parse(guardados) : [];
-
-    return lista.map((producto) => ({
-      ...producto,
-      cantidad: producto.cantidad || 1
-    }));
+    return guardados ? JSON.parse(guardados) : [];
   });
 
-  // Guardar el carrito cada vez que cambie
   useEffect(() => {
-    localStorage.setItem(
-      "carrito_los_maestros",
-      JSON.stringify(carrito)
-    );
+    guardarCarrito(carrito);
   }, [carrito]);
 
-  // Filtrar productos según categoría
   const visibles = categoria === "Todas"
     ? productos
-    : productos.filter(
-        (producto) => producto.categoria === categoria
-      );
+    : productos.filter((prod) => prod.categoria === categoria);
 
-  // Agregar productos al carrito
   function agregarAlCarrito(producto) {
-
-    const existente = carrito.find(
-      (item) => item.id === producto.id
-    );
-
-    if (existente) {
-
-      if (existente.cantidad >= producto.stock) {
-        alert("No hay más unidades disponibles.");
-        return;
+    const itemExistente = carrito.find((item) => item.id === producto.id);
+    if (itemExistente) {
+      if (itemExistente.cantidad < producto.stock) {
+        cambiarCantidad(producto.id, itemExistente.cantidad + 1);
+      } else {
+        alert("No hay más stock disponible de este producto.");
       }
-
-      setCarrito(
-        carrito.map((item) =>
-          item.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
-        )
-      );
-
-    } else {
-
-      if (producto.stock > 0) {
-        setCarrito([
-          ...carrito,
-          { ...producto, cantidad: 1 }
-        ]);
-      }
-
-    }
-  }
-
-  // Cambiar la cantidad de un producto
-  function cambiarCantidad(id, nuevaCantidad) {
-
-    const producto = carrito.find(
-      (item) => item.id === id
-    );
-
-    if (!producto) return;
-
-    if (nuevaCantidad < 1 ||
-        nuevaCantidad > producto.stock) {
       return;
     }
+    setCarrito([...carrito, { ...producto, cantidad: 1 }]);
+  }
 
+  function cambiarCantidad(id, nuevaCantidad) {
     setCarrito(
       carrito.map((item) =>
-        item.id === id
-          ? { ...item, cantidad: nuevaCantidad }
-          : item
+        item.id === id ? { ...item, cantidad: nuevaCantidad } : item
       )
     );
   }
 
-  // Eliminar un producto del carrito
   function eliminarDelCarrito(id) {
-
-    setCarrito(
-      carrito.filter((item) => item.id !== id)
-    );
+    setCarrito(carrito.filter((item) => item.id !== id));
   }
 
-  // Vaciar el carrito
   function vaciarCarrito() {
     setCarrito([]);
   }
 
-  // Calcular cantidad de artículos del carrito
-  let cantidadCarrito = 0;
+  const cantidadTotalCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
-  carrito.forEach((producto) => {
-    cantidadCarrito += producto.cantidad;
-  });
+  // 1. Vista de Inicio (Portada institucional con botón directo al catálogo)
+  const vistaInicio = (
+    <main className="container py-4 text-center">
+      <Bienvenida />
+      <div className="mt-4">
+        <Button as={Link} to="/productos" variant="warning" size="lg" className="fw-bold">
+          Ver Catálogo Completo de Productosss
+        </Button>
+      </div>
+    </main>
+  );
+
+  // 2. Vista del Catálogo (Filtro por categoría + tarjetas de productos)
+  const vistaCatalogo = (
+    <main className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
+        <div>
+          <h1 className="h3 fw-bold mb-1">Catálogo de Materiales y Herramientas</h1>
+          <p className="text-muted mb-0">Explora nuestro stock para faenas y obras en La Serena.</p>
+        </div>
+        <div style={{ minWidth: "220px" }}>
+          <Form.Select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            aria-label="Filtrar por categoría"
+          >
+            <option value="Todas">Todas las categorías</option>
+            <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
+            <option value="Construcción">Construcción</option>
+            <option value="Herramientas Manuales">Herramientas Manuales</option>
+            <option value="Gasfitería">Gasfitería</option>
+            <option value="Pinturas">Pinturas</option>
+            <option value="Electricidad">Electricidad</option>
+          </Form.Select>
+        </div>
+      </div>
+      <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
+    </main>
+  );
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
-
       <Cabecera />
-
-      <Navegacion cantidadCarrito={cantidadCarrito} />
+      <Navegacion cantidadCarrito={cantidadTotalCarrito} />
 
       <div className="flex-grow-1">
         <Routes>
-
-          {/* Página principal */}
-          <Route
-            path="/"
-            element={
-              <main className="container py-4">
-
-                <Bienvenida />
-
-                <section className="my-5" id="catalogo">
-
-                  <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
-
-                    <div>
-                      <h2 className="h3 fw-bold mb-1">
-                        Catálogo de Productos
-                      </h2>
-
-                      <p className="fw-bold mb-1">
-                        Materiales y herramientas con entrega
-                        inmediata en La Serena
-                      </p>
-                    </div>
-
-                    <div style={{ minWidth: "220px" }}>
-
-                      <Form.Select
-                        value={categoria}
-                        onChange={(evento) =>
-                          setCategoria(evento.target.value)
-                        }
-                        aria-label="Filtrar por categoría"
-                      >
-                        <option value="Todas">
-                          Todas las categorías
-                        </option>
-
-                        <option value="Herramientas Eléctricas">
-                          Herramientas Eléctricas
-                        </option>
-
-                        <option value="Construcción">
-                          Construcción
-                        </option>
-
-                        <option value="Herramientas Manuales">
-                          Herramientas Manuales
-                        </option>
-
-                        <option value="Gasfitería">
-                          Gasfitería
-                        </option>
-
-                        <option value="Pinturas">
-                          Pinturas
-                        </option>
-
-                        <option value="Electricidad">
-                          Electricidad
-                        </option>
-
-                      </Form.Select>
-                    </div>
-                  </div>
-
-                  <Row className="g-4">
-                    {visibles.map((producto) => (
-                      <Col
-                        xs={12}
-                        sm={6}
-                        lg={3}
-                        key={producto.id}
-                      >
-                        <TarjetaProducto
-                          producto={producto}
-                          onAgregar={agregarAlCarrito}
-                        />
-                      </Col>
-                    ))}
-                  </Row>
-
-                </section>
-              </main>
-            }
-          />
-
-          {/* Detalle de producto */}
-          <Route
-            path="/producto/:id"
-            element={<DetalleProducto />}
-          />
-
-          {/* Carrito de compras */}
+          {/* Portada y Catálogo diferenciados */}
+          <Route path="/" element={vistaInicio} />
+          <Route path="/productos" element={vistaCatalogo} />
+          
+          {/* Ficha dinámica, carrito y checkout */}
+          <Route path="/productos/:id" element={<DetalleProducto />} />
           <Route
             path="/carrito"
             element={
@@ -237,8 +129,6 @@ function App() {
               />
             }
           />
-
-          {/* Checkout */}
           <Route
             path="/checkout"
             element={
@@ -249,17 +139,18 @@ function App() {
             }
           />
 
-          {/* Página no encontrada */}
-          <Route
-            path="*"
-            element={<NoEncontrada />}
-          />
+          {/* Panel administrativo y páginas informativas */}
+          <Route path="/admin/productos" element={<AdminProductos />} />
+          <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/contacto" element={<Contacto />} />
 
+          {/* Manejo de rutas inexistentes */}
+          <Route path="*" element={<NoEncontrada />} />
         </Routes>
       </div>
 
       <PiePagina />
-
     </div>
   );
 }

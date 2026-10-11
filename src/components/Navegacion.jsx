@@ -8,7 +8,6 @@ import {
 } from "react-bootstrap";
 
 function Navegacion({ cantidadCarrito }) {
-
   return (
     <Navbar
       expand="lg"
@@ -17,7 +16,6 @@ function Navegacion({ cantidadCarrito }) {
       className="border-bottom border-secondary"
     >
       <Container>
-
         <Navbar.Brand
           as={Link}
           to="/"
@@ -32,9 +30,7 @@ function Navegacion({ cantidadCarrito }) {
         />
 
         <Navbar.Collapse id="menu-principal">
-
           <Nav className="me-auto">
-
             <Nav.Link
               as={Link}
               to="/"
@@ -43,26 +39,33 @@ function Navegacion({ cantidadCarrito }) {
               Inicio
             </Nav.Link>
 
-            <Nav.Link as={Link} to="/">
+            <Nav.Link as={Link} to="/productos">
               Productos
             </Nav.Link>
 
-            <Nav.Link href="#nosotros">
+         
+
+            {/* Rutas en minúsculas para coincidir exactamente con App.jsx */}
+            <Nav.Link as={Link} to="/nosotros">
               Nosotros
             </Nav.Link>
 
-            <Nav.Link href="#blogs">
+            <Nav.Link as={Link} to="/blogs">
               Blogs
             </Nav.Link>
 
-            <Nav.Link href="#contacto">
+            <Nav.Link as={Link} to="/contacto">
               Contacto
+            </Nav.Link>
+
+               {/* Acceso requerido por la Guía 11 */}
+            <Nav.Link as={Link} to="/admin/productos">
+              Administración
             </Nav.Link>
 
           </Nav>
 
           <div className="d-flex align-items-center gap-3">
-
             <Button
               as={Link}
               to="/carrito"
@@ -76,7 +79,6 @@ function Navegacion({ cantidadCarrito }) {
             </Button>
 
             <div className="text-light small">
-
               <a
                 href="#login"
                 className="text-light text-decoration-none"
@@ -84,9 +86,7 @@ function Navegacion({ cantidadCarrito }) {
                 Iniciar sesión
               </a>
 
-              <span className="mx-2 text-secondary">
-                |
-              </span>
+              <span className="mx-2 text-secondary">|</span>
 
               <a
                 href="#registro"
@@ -94,11 +94,8 @@ function Navegacion({ cantidadCarrito }) {
               >
                 Registrar
               </a>
-
             </div>
-
           </div>
-
         </Navbar.Collapse>
       </Container>
     </Navbar>

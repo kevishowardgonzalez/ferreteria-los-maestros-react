@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function TarjetaProducto({ producto, onAgregar }) {
   return (
     <article className="card h-100 shadow-sm border-0">
@@ -12,14 +14,24 @@ function TarjetaProducto({ producto, onAgregar }) {
         <p className="h5 text-primary fw-bold my-2">
           ${producto.precio.toLocaleString("es-CL")}
         </p>
-        <button
-          type="button"
-          className="btn btn-primary mt-auto w-100"
-          onClick={() => onAgregar(producto)}
-          disabled={producto.stock === 0}
-        >
-          {producto.stock === 0 ? "Sin stock" : "Añadir al Carrito"}
-        </button>
+
+        {producto.stock > 0 && producto.stock <= 5 && (
+          <p className="text-danger fw-bold small mb-2">¡Últimas unidades en bodega!</p>
+        )}
+
+        <div className="d-flex gap-2 mt-auto">
+          <Link to={`/productos/${producto.id}`} className="btn btn-outline-secondary btn-sm w-50">
+            Detalle
+          </Link>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm w-50"
+            onClick={() => onAgregar(producto)}
+            disabled={producto.stock === 0}
+          >
+            {producto.stock === 0 ? "Sin stock" : "Añadir"}
+          </button>
+        </div>
       </div>
     </article>
   );
