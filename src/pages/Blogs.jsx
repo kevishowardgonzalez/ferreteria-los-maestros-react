@@ -1,39 +1,49 @@
-import { useState } from "react";
-import { Button, Form } from "react-bootstrap";
+// src/pages/Blogs.jsx
+import { Container, Row, Col, Card, Badge, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+
 function Blogs() {
   return (
     <main className="container py-4">
-      <h1 className="h2 mb-4">Guías Técnicas y Noticias</h1>
+      <h1 className="h2 mb-4 fw-bold">Guías Técnicas y Noticias</h1>
 
-      <div className="row g-4">
-        <div className="col-12 col-md-6">
-          <article className="card h-100 shadow-sm border-0 p-3">
-            <span className="badge bg-warning text-dark w-auto align-self-start mb-2">
+      <Row className="g-4">
+        {/* Noticia 1 */}
+        <Col xs={12} md={6}>
+          <Card className="h-100 shadow-sm border-0 p-3">
+            <Badge bg="warning" text="dark" className="w-auto align-self-start mb-2">
               Guía #1
-            </span>
-            <h2 className="h5">
+            </Badge>
+            <h2 className="h5 fw-bold">
               Cómo elegir el cemento según el clima de La Serena
             </h2>
             <p className="text-muted small flex-grow-1">
               Factores clave sobre la salinidad costera, fraguado y cómo proteger tus obras de la humedad marina.
             </p>
-          </article>
-        </div>
+            <Button as={Link} to="/blogs/1" variant="outline-dark" size="sm" className="mt-2 align-self-start">
+              Leer guía completa →
+            </Button>
+          </Card>
+        </Col>
 
-        <div className="col-12 col-md-6">
-          <article className="card h-100 shadow-sm border-0 p-3">
-            <span className="badge bg-warning text-dark w-auto align-self-start mb-2">
+        {/* Noticia 2 */}
+        <Col xs={12} md={6}>
+          <Card className="h-100 shadow-sm border-0 p-3">
+            <Badge bg="warning" text="dark" className="w-auto align-self-start mb-2">
               Consejo #2
-            </span>
-            <h2 className="h5">
+            </Badge>
+            <h2 className="h5 fw-bold">
               Mantenimiento de herramientas eléctricas
             </h2>
             <p className="text-muted small flex-grow-1">
               Revisión periódica de escobillas, limpieza de polvo en percutores y cuidado de baterías de litio.
             </p>
-          </article>
-        </div>
-      </div>
+            <Button as={Link} to="/blogs/2" variant="outline-dark" size="sm" className="mt-2 align-self-start">
+              Leer consejo completo →
+            </Button>
+          </Card>
+        </Col>
+      </Row>
     </main>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import Cabecera from "./components/Cabecera";
@@ -9,11 +8,15 @@ import Catalogo from "./pages/Catalogo";
 import DetalleProducto from "./pages/DetalleProducto";
 import Carrito from "./pages/Carrito";
 import Checkout from "./pages/Checkout";
-import AdminProductos from "./pages/admin/AdminProductos";
+import VistaAdmin from "./pages/admin/VistaAdmin";
 import NoEncontrada from "./pages/NoEncontrada";
 import Nosotros from "./pages/Nosotros";
 import Blogs from "./pages/Blogs";
 import Contacto from "./pages/Contacto";
+import Login from "./pages/Login";
+import Registro from "./pages/Registro";
+import DetalleBlog1 from "./pages/DetalleBlog1";
+import DetalleBlog2 from "./pages/DetalleBlog2";
 import { productos as listaInicial } from "./data/productos";
 import { guardarCarrito } from "./utils/persistencia";
 import { Form, Button } from "react-bootstrap";
@@ -65,13 +68,13 @@ function App() {
 
   const cantidadTotalCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
-  // 1. Vista de Inicio (Portada institucional con botón directo al catálogo)
+  // 1. Vista de Inicio (Portada institucional)
   const vistaInicio = (
     <main className="container py-4 text-center">
       <Bienvenida />
       <div className="mt-4">
         <Button as={Link} to="/productos" variant="warning" size="lg" className="fw-bold">
-          Ver Catálogo Completo de Productosss
+          Ver Catálogo Completo de Productos
         </Button>
       </div>
     </main>
@@ -139,11 +142,17 @@ function App() {
             }
           />
 
-          {/* Panel administrativo y páginas informativas */}
-          <Route path="/admin/productos" element={<AdminProductos />} />
+          {/* Panel administrativo institucional */}
+          <Route path="/admin/productos" element={<VistaAdmin />} />
+
+          {/* Páginas informativas y autenticación */}
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/1" element={<DetalleBlog1 />} />
+          <Route path="/blogs/2" element={<DetalleBlog2 />} />
           <Route path="/contacto" element={<Contacto />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registro" element={<Registro />} />
 
           {/* Manejo de rutas inexistentes */}
           <Route path="*" element={<NoEncontrada />} />
