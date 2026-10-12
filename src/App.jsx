@@ -1,14 +1,16 @@
+// src/App.jsx
 import { useState, useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
+
 import Cabecera from "./components/Cabecera";
 import Navegacion from "./components/Navegacion";
 import PiePagina from "./components/PiePagina";
 import Bienvenida from "./components/Bienvenida";
+
 import Catalogo from "./pages/Catalogo";
 import DetalleProducto from "./pages/DetalleProducto";
 import Carrito from "./pages/Carrito";
 import Checkout from "./pages/Checkout";
-import VistaAdmin from "./pages/admin/VistaAdmin";
 import NoEncontrada from "./pages/NoEncontrada";
 import Nosotros from "./pages/Nosotros";
 import Blogs from "./pages/Blogs";
@@ -17,6 +19,16 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import DetalleBlog1 from "./pages/DetalleBlog1";
 import DetalleBlog2 from "./pages/DetalleBlog2";
+
+// Subsistema administrativo
+import HomeAdmin from "./pages/admin/HomeAdmin";
+import AdminProductos from "./pages/admin/AdminProductos";
+import AdminCategorias from "./pages/admin/AdminCategorias";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminOrdenes from "./pages/admin/AdminOrdenes";
+import AdminReportes from "./pages/admin/AdminReportes";
+import AdminPerfil from "./pages/admin/AdminPerfil";
+
 import { productos as listaInicial } from "./data/productos";
 import { guardarCarrito } from "./utils/persistencia";
 import { Form, Button } from "react-bootstrap";
@@ -33,9 +45,10 @@ function App() {
     guardarCarrito(carrito);
   }, [carrito]);
 
-  const visibles = categoria === "Todas"
-    ? productos
-    : productos.filter((prod) => prod.categoria === categoria);
+  const visibles =
+    categoria === "Todas"
+      ? productos
+      : productos.filter((prod) => prod.categoria === categoria);
 
   function agregarAlCarrito(producto) {
     const itemExistente = carrito.find((item) => item.id === producto.id);
@@ -66,9 +79,24 @@ function App() {
     setCarrito([]);
   }
 
-  const cantidadTotalCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
+  const cantidadTotalCarrito = carrito.reduce(
+    (acc, item) => acc + item.cantidad,
+    0
+  );
 
-  // 1. Vista de Inicio (Portada institucional)
+  // Layout estándar de la Tienda Pública
+  function TiendaLayout({ children }) {
+    return (
+      <div className="bg-light min-vh-100 d-flex flex-column">
+        <Cabecera />
+        <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+        <div className="flex-grow-1">{children}</div>
+        <PiePagina />
+      </div>
+    );
+  }
+
+  // 1. Portada
   const vistaInicio = (
     <main className="container py-4 text-center">
       <Bienvenida />
@@ -80,7 +108,7 @@ function App() {
     </main>
   );
 
-  // 2. Vista del Catálogo (Filtro por categoría + tarjetas de productos)
+  // 2. Catálogo con filtro
   const vistaCatalogo = (
     <main className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
@@ -109,58 +137,52 @@ function App() {
   );
 
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
-      <Cabecera />
-      <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+    <Routes>
+      {/* --- RUTAS DE LA TIENDA PÚBLICA (CON CABECERA Y NAVBAR) --- */}
+      <Route path="/" element={<TiendaLayout>{vistaInicio}</TiendaLayout>} />
+      <Route path="/productos" element={<TiendaLayout>{vistaCatalogo}</TiendaLayout>} />
+      <Route path="/productos/:id" element={<TiendaLayout><DetalleProducto /></TiendaLayout>} />
+      <Route
+        path="/carrito"
+        element={
+          <TiendaLayout>
+            <Carrito
+              carrito={carrito}
+              onCambiarCantidad={cambiarCantidad}
+              onEliminar={eliminarDelCarrito}
+              onVaciar={vaciarCarrito}
+            />
+          </TiendaLayout>
+        }
+      />
+      <Route
+        path="/checkout"
+        element={
+          <TiendaLayout>
+            <Checkout carrito={carrito} onCompraExitosa={vaciarCarrito} />
+          </TiendaLayout>
+        }
+      />
+      <Route path="/nosotros" element={<TiendaLayout><Nosotros /></TiendaLayout>} />
+      <Route path="/blogs" element={<TiendaLayout><Blogs /></TiendaLayout>} />
+      <Route path="/blogs/1" element={<TiendaLayout><DetalleBlog1 /></TiendaLayout>} />
+      <Route path="/blogs/2" element={<TiendaLayout><DetalleBlog2 /></TiendaLayout>} />
+      <Route path="/contacto" element={<TiendaLayout><Contacto /></TiendaLayout>} />
+      <Route path="/login" element={<TiendaLayout><Login /></TiendaLayout>} />
+      <Route path="/registro" element={<TiendaLayout><Registro /></TiendaLayout>} />
 
-      <div className="flex-grow-1">
-        <Routes>
-          {/* Portada y Catálogo diferenciados */}
-          <Route path="/" element={vistaInicio} />
-          <Route path="/productos" element={vistaCatalogo} />
-          
-          {/* Ficha dinámica, carrito y checkout */}
-          <Route path="/productos/:id" element={<DetalleProducto />} />
-          <Route
-            path="/carrito"
-            element={
-              <Carrito
-                carrito={carrito}
-                onCambiarCantidad={cambiarCantidad}
-                onEliminar={eliminarDelCarrito}
-                onVaciar={vaciarCarrito}
-              />
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <Checkout
-                carrito={carrito}
-                onCompraExitosa={vaciarCarrito}
-              />
-            }
-          />
+      {/* --- SUBSISTEMA ADMINISTRATIVO (INDEPENDIENTE Y LIMPIO) --- */}
+      <Route path="/admin" element={<HomeAdmin />} />
+      <Route path="/admin/productos" element={<AdminProductos />} />
+      <Route path="/admin/categorias" element={<AdminCategorias />} />
+      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+      <Route path="/admin/ordenes" element={<AdminOrdenes />} />
+      <Route path="/admin/reportes" element={<AdminReportes />} />
+      <Route path="/admin/perfil" element={<AdminPerfil />} />
 
-          {/* Panel administrativo institucional */}
-          <Route path="/admin/productos" element={<VistaAdmin />} />
-
-          {/* Páginas informativas y autenticación */}
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/1" element={<DetalleBlog1 />} />
-          <Route path="/blogs/2" element={<DetalleBlog2 />} />
-          <Route path="/contacto" element={<Contacto />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
-
-          {/* Manejo de rutas inexistentes */}
-          <Route path="*" element={<NoEncontrada />} />
-        </Routes>
-      </div>
-
-      <PiePagina />
-    </div>
+      {/* Ruta 404 */}
+      <Route path="*" element={<TiendaLayout><NoEncontrada /></TiendaLayout>} />
+    </Routes>
   );
 }
 

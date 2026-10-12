@@ -1,41 +1,16 @@
 // src/pages/admin/AdminProductos.jsx
 import { useState } from "react";
-import SidebarAdmin from "./VistaAdmin";
+import FormularioProducto from "./FormularioProducto";
 import { productos as listaInicial } from "../../data/productos";
+import MenuAdmin from "./MenuAdmin";
 
 function AdminProductos() {
   const [lista, setLista] = useState(listaInicial);
-  const [nombre, setNombre] = useState("");
-  const [categoria, setCategoria] = useState("");
-  const [precio, setPrecio] = useState("");
-  const [stock, setStock] = useState("");
   const [mensaje, setMensaje] = useState("");
 
-  function manejarGuardar(e) {
-    e.preventDefault();
-
-    if (!nombre.trim() || !categoria || Number(precio) <= 0 || Number(stock) < 0) {
-      alert("Por favor completa todos los campos correctamente.");
-      return;
-    }
-
-    const nuevoProducto = {
-      id: Date.now(),
-      nombre: nombre.trim(),
-      categoria,
-      precio: Number(precio),
-      stock: Number(stock),
-      descripcion: "Ingresado desde panel de administración"
-    };
-
-    setLista([...lista, nuevoProducto]);
-    setMensaje(`Producto "${nombre}" registrado con éxito.`);
-
-    // Limpiar formulario
-    setNombre("");
-    setCategoria("");
-    setPrecio("");
-    setStock("");
+  function agregarProducto(nuevo) {
+    setLista([...lista, nuevo]);
+    setMensaje(`Producto "${nuevo.nombre}" guardado con éxito.`);
   }
 
   function eliminarProducto(id) {
@@ -47,15 +22,15 @@ function AdminProductos() {
   const stockCritico = lista.filter((prod) => prod.stock <= 5).length;
 
   return (
-    <div className="d-flex flex-grow-1">
-      {/* 1. Menú Lateral del Administrador */}
-      <SidebarAdmin />
+    <div className="d-flex min-vh-100 bg-light">
+      {/* Menú lateral unificado */}
+      <MenuAdmin />
 
-      {/* 2. Área Central del Administrador */}
-      <main className="container-fluid py-4 px-md-4 bg-light">
-        <header className="border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+      {/* Contenido principal */}
+      <main className="flex-grow-1 p-4 overflow-auto">
+        <header className="border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
-            <h1 className="h3 fw-bold mb-1">Inventario y Catálogo de Productos</h1>
+            <h1 className="h4 fw-bold mb-1">Inventario y Catálogo de Productos</h1>
             <p className="text-muted mb-0 small">Gestión y control de existencias en faena.</p>
           </div>
           <span className="badge bg-primary fs-6">
@@ -63,7 +38,7 @@ function AdminProductos() {
           </span>
         </header>
 
-        {/* Tarjetas KPI de resumen */}
+        {/* Tarjetas KPI */}
         <div className="row g-3 mb-4">
           <div className="col-12 col-md-4">
             <div className="card shadow-sm border-0 p-3 bg-white">
@@ -87,76 +62,14 @@ function AdminProductos() {
 
         {mensaje && <div className="alert alert-success py-2">{mensaje}</div>}
 
-        {/* Formulario para agregar producto */}
-        <section className="card shadow-sm border-0 p-4 mb-4">
+        {/* Formulario controlado traído como componente */}
+        <section className="card shadow-sm border-0 p-4 mb-4 bg-white">
           <h2 className="h5 fw-bold mb-3">Registrar Nuevo Producto</h2>
-          <form onSubmit={manejarGuardar}>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Nombre del producto *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ej: Taladro Percutor 20V"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Categoría *</label>
-                <select
-                  className="form-select"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  required
-                >
-                  <option value="">Selecciona categoría</option>
-                  <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-                  <option value="Construcción">Construcción</option>
-                  <option value="Herramientas Manuales">Herramientas Manuales</option>
-                  <option value="Gasfitería">Gasfitería</option>
-                  <option value="Pinturas">Pinturas</option>
-                  <option value="Electricidad">Electricidad</option>
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Precio ($ CLP) *</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="form-control"
-                  placeholder="Ej: 59990"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Stock inicial *</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="form-control"
-                  placeholder="Ej: 15"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-warning fw-bold mt-3 px-4">
-              Guardar Producto
-            </button>
-          </form>
+          <FormularioProducto onGuardar={agregarProducto} />
         </section>
 
-        {/* Tabla de Productos */}
-        <section className="card shadow-sm border-0 p-4">
+        {/* Tabla de Inventario */}
+        <section className="card shadow-sm border-0 p-4 bg-white">
           <h2 className="h5 fw-bold mb-3">Listado de Inventario Actual</h2>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
