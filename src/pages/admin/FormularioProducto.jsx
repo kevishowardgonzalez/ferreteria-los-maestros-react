@@ -1,12 +1,21 @@
 // src/pages/admin/FormularioProducto.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Form } from "react-bootstrap";
 
 const inicial = { nombre: "", categoria: "", precio: "", stock: "" };
 
-function FormularioProducto({ onGuardar }) {
+function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
   const [datos, setDatos] = useState(inicial);
   const [errores, setErrores] = useState({});
+
+  // Carga los datos en el formulario si se presiona "Editar"
+  useEffect(() => {
+    if (productoAEditar) {
+      setDatos(productoAEditar);
+    } else {
+      setDatos(inicial);
+    }
+  }, [productoAEditar]);
 
   function cambiar(evento) {
     const { name, value } = evento.target;
@@ -27,11 +36,12 @@ function FormularioProducto({ onGuardar }) {
 
     onGuardar({
       ...datos,
-      id: Date.now(),
+      id: datos.id || Date.now(),
       precio: Number(datos.precio),
       stock: Number(datos.stock),
-      descripcion: "Ingresado desde panel de administración"
+      descripcion: datos.descripcion || "Ingresado desde panel de administración"
     });
+
     setDatos(inicial);
   }
 
@@ -89,7 +99,7 @@ function FormularioProducto({ onGuardar }) {
       </Form.Group>
 
       <Form.Group className="mb-3" controlId="formStock">
-        <Form.Label>Stock inicial</Form.Label>
+        <Form.Label>Stock inicial / actual</Form.Label>
         <Form.Control
           type="number"
           name="stock"
@@ -104,9 +114,16 @@ function FormularioProducto({ onGuardar }) {
         </Form.Control.Feedback>
       </Form.Group>
 
-      <Button type="submit" variant="warning" className="fw-bold">
-        Guardar Producto
-      </Button>
+      <div className="d-flex gap-2">
+        <Button type="submit" variant="warning" className="fw-bold">
+          {productoAEditar ? "Actualizar Producto" : "Guardar Producto"}
+        </Button>
+        {productoAEditar && (
+          <Button type="button" variant="secondary" onClick={onCancelarEdicion}>
+            Cancelar
+          </Button>
+        )}
+      </div>
     </Form>
   );
 }

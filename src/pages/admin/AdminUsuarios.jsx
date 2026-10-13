@@ -6,7 +6,9 @@ function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([
     { id: 1, run: "12345678-5", nombre: "Kevis Admin", correo: "admin@duoc.cl", rol: "Administrador" },
     { id: 2, run: "19876543-2", nombre: "Carlos Maestro", correo: "carlos@gmail.com", rol: "Cliente" },
-    { id: 3, run: "15987456-3", nombre: "Marcos Rodríguez", correo: "m.rodriguez@duoc.cl", rol: "Vendedor" }
+    { id: 3, run: "15987456-3", nombre: "Marcos Rodríguez", correo: "m.rodriguez@duoc.cl", rol: "Vendedor" },
+    { id: 4, run: "15987456-3", nombre: "Javier Cruz", correo: "vendedor@duoc.cl", rol: "Vendedor" }
+    
   ]);
 
   function eliminarUsuario(id) {

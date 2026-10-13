@@ -29,6 +29,14 @@ import AdminOrdenes from "./pages/admin/AdminOrdenes";
 import AdminReportes from "./pages/admin/AdminReportes";
 import AdminPerfil from "./pages/admin/AdminPerfil";
 
+// Vendedor
+import VendedorProductos from "./pages/vendedor/VendedorProductos";
+import VendedorOrdenes from "./pages/vendedor/VendedorOrdenes";
+
+// Cliente
+import MisCompras from "./pages/cliente/MisCompras";
+import PerfilCliente from "./pages/cliente/PerfilCliente";
+
 import { productos as listaInicial } from "./data/productos";
 import { guardarCarrito } from "./utils/persistencia";
 import { Form, Button } from "react-bootstrap";
@@ -84,18 +92,6 @@ function App() {
     0
   );
 
-  // Layout estándar de la Tienda Pública
-  function TiendaLayout({ children }) {
-    return (
-      <div className="bg-light min-vh-100 d-flex flex-column">
-        <Cabecera />
-        <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-        <div className="flex-grow-1">{children}</div>
-        <PiePagina />
-      </div>
-    );
-  }
-
   // 1. Portada
   const vistaInicio = (
     <main className="container py-4 text-center">
@@ -138,50 +134,198 @@ function App() {
 
   return (
     <Routes>
-      {/* --- RUTAS DE LA TIENDA PÚBLICA (CON CABECERA Y NAVBAR) --- */}
-      <Route path="/" element={<TiendaLayout>{vistaInicio}</TiendaLayout>} />
-      <Route path="/productos" element={<TiendaLayout>{vistaCatalogo}</TiendaLayout>} />
-      <Route path="/productos/:id" element={<TiendaLayout><DetalleProducto /></TiendaLayout>} />
+      {/* VISTAS DE LA TIENDA PÚBLICA (Con cabecera y barra de navegación) */}
+      <Route
+        path="/"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1">{vistaInicio}</div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/productos"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1">{vistaCatalogo}</div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/productos/:id"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><DetalleProducto /></div>
+            <PiePagina />
+          </div>
+        }
+      />
       <Route
         path="/carrito"
         element={
-          <TiendaLayout>
-            <Carrito
-              carrito={carrito}
-              onCambiarCantidad={cambiarCantidad}
-              onEliminar={eliminarDelCarrito}
-              onVaciar={vaciarCarrito}
-            />
-          </TiendaLayout>
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1">
+              <Carrito
+                carrito={carrito}
+                onCambiarCantidad={cambiarCantidad}
+                onEliminar={eliminarDelCarrito}
+                onVaciar={vaciarCarrito}
+              />
+            </div>
+            <PiePagina />
+          </div>
         }
       />
       <Route
         path="/checkout"
         element={
-          <TiendaLayout>
-            <Checkout carrito={carrito} onCompraExitosa={vaciarCarrito} />
-          </TiendaLayout>
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1">
+              <Checkout carrito={carrito} onCompraExitosa={vaciarCarrito} />
+            </div>
+            <PiePagina />
+          </div>
         }
       />
-      <Route path="/nosotros" element={<TiendaLayout><Nosotros /></TiendaLayout>} />
-      <Route path="/blogs" element={<TiendaLayout><Blogs /></TiendaLayout>} />
-      <Route path="/blogs/1" element={<TiendaLayout><DetalleBlog1 /></TiendaLayout>} />
-      <Route path="/blogs/2" element={<TiendaLayout><DetalleBlog2 /></TiendaLayout>} />
-      <Route path="/contacto" element={<TiendaLayout><Contacto /></TiendaLayout>} />
-      <Route path="/login" element={<TiendaLayout><Login /></TiendaLayout>} />
-      <Route path="/registro" element={<TiendaLayout><Registro /></TiendaLayout>} />
+      <Route
+        path="/nosotros"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><Nosotros /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/blogs"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><Blogs /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/blogs/1"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><DetalleBlog1 /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/blogs/2"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><DetalleBlog2 /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/contacto"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><Contacto /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><Login /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/registro"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><Registro /></div>
+            <PiePagina />
+          </div>
+        }
+      />
 
-      {/* --- SUBSISTEMA ADMINISTRATIVO (INDEPENDIENTE Y LIMPIO) --- */}
+      {/* VISTAS EXCLUSIVAS DE CLIENTE */}
+      <Route
+        path="/cliente/compras"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><MisCompras /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+      <Route
+        path="/cliente/perfil"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><PerfilCliente /></div>
+            <PiePagina />
+          </div>
+        }
+      />
+
+      {/* RUTAS DE ADMINISTRADOR (Panel limpio e independiente) */}
       <Route path="/admin" element={<HomeAdmin />} />
       <Route path="/admin/productos" element={<AdminProductos />} />
-      <Route path="/admin/categorias" element={<AdminCategorias />} />
       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+      <Route path="/admin/categorias" element={<AdminCategorias />} />
       <Route path="/admin/ordenes" element={<AdminOrdenes />} />
       <Route path="/admin/reportes" element={<AdminReportes />} />
       <Route path="/admin/perfil" element={<AdminPerfil />} />
 
-      {/* Ruta 404 */}
-      <Route path="*" element={<TiendaLayout><NoEncontrada /></TiendaLayout>} />
+      {/* RUTAS DE VENDEDOR (Panel limpio e independiente) */}
+      <Route path="/vendedor/productos" element={<VendedorProductos />} />
+      <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
+
+      {/* RUTA 404 */}
+      <Route
+        path="*"
+        element={
+          <div className="bg-light min-vh-100 d-flex flex-column">
+            <Cabecera />
+            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
+            <div className="flex-grow-1"><NoEncontrada /></div>
+            <PiePagina />
+          </div>
+        }
+      />
     </Routes>
   );
 }

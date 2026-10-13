@@ -1,18 +1,21 @@
-
+// src/pages/Checkout.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Form, Button, Row, Col } from "react-bootstrap";
 
 function Checkout({ carrito, onCompraExitosa }) {
+  // Autocompletar datos del cliente si tiene sesión iniciada
+  const sesionGuardada = localStorage.getItem("usuario_sesion");
+  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
 
   const [datos, setDatos] = useState({
-    nombre: "",
+    nombre: usuario?.nombre || "",
     apellido: "",
-    correo: "",
-    calle: "",
-    numero: "",
-    region: "",
-    comuna: "",
+    correo: usuario?.correo || "",
+    calle: "Av. Balmaceda",
+    numero: "1234",
+    region: "Coquimbo",
+    comuna: "La Serena",
     indicaciones: "",
     entrega: "domicilio",
     pago: "aprobado"
@@ -22,14 +25,12 @@ function Checkout({ carrito, onCompraExitosa }) {
   const [resultado, setResultado] = useState(null);
 
   let total = 0;
-
   carrito.forEach((producto) => {
     total += producto.precio * producto.cantidad;
   });
 
   function cambiar(evento) {
     const { name, value } = evento.target;
-
     setDatos({
       ...datos,
       [name]: value
@@ -38,7 +39,6 @@ function Checkout({ carrito, onCompraExitosa }) {
 
   function enviar(evento) {
     evento.preventDefault();
-
     const nuevosErrores = {};
 
     if (!datos.nombre.trim()) {
@@ -49,36 +49,40 @@ function Checkout({ carrito, onCompraExitosa }) {
       nuevosErrores.apellido = "El apellido es obligatorio";
     }
 
-    if (!datos.correo.includes("@") ||
-        !datos.correo.includes(".")) {
+    if (!datos.correo.includes("@") || !datos.correo.includes(".")) {
       nuevosErrores.correo = "Ingresa un correo válido";
     }
 
     if (datos.entrega === "domicilio") {
-      if (!datos.calle.trim()) {
-        nuevosErrores.calle = "La calle es obligatoria";
-      }
-
-      if (!datos.numero.trim()) {
-        nuevosErrores.numero = "Ingresa el número";
-      }
-
-      if (!datos.region.trim()) {
-        nuevosErrores.region = "Ingresa la región";
-      }
-
-      if (!datos.comuna.trim()) {
-        nuevosErrores.comuna = "Ingresa la comuna";
-      }
+      if (!datos.calle.trim()) nuevosErrores.calle = "La calle es obligatoria";
+      if (!datos.numero.trim()) nuevosErrores.numero = "Ingresa el número";
+      if (!datos.region.trim()) nuevosErrores.region = "Ingresa la región";
+      if (!datos.comuna.trim()) nuevosErrores.comuna = "Ingresa la comuna";
     }
 
     setErrores(nuevosErrores);
-
-    if (Object.keys(nuevosErrores).length > 0) {
-      return;
-    }
+    if (Object.keys(nuevosErrores).length > 0) return;
 
     const compraExitosa = datos.pago === "aprobado";
+
+    // GUARDAR EN HISTORIAL SI EL PAGO FUE APROBADO
+    if (compraExitosa) {
+      const nuevaOrden = {
+        id: `#${Date.now().toString().slice(-8)}`,
+        fecha: new Date().toISOString().split("T")[0],
+        total: total,
+        items: carrito.map((p) => `${p.nombre} (${p.cantidad})`).join(", "),
+        estado: "Pagado"
+      };
+
+      const historialPrevio = JSON.parse(localStorage.getItem("ordenes_compras_cliente") || "[]");
+      localStorage.setItem(
+        "ordenes_compras_cliente",
+        JSON.stringify([nuevaOrden, ...historialPrevio])
+      );
+
+      onCompraExitosa();
+    }
 
     setResultado({
       exitosa: compraExitosa,
@@ -86,84 +90,63 @@ function Checkout({ carrito, onCompraExitosa }) {
       productos: carrito.map((producto) => ({ ...producto })),
       total: total
     });
-
-    if (compraExitosa) {
-      onCompraExitosa();
-    }
   }
 
-  // Vista de compra exitosa o rechazada
+  // Vista de confirmación del pedido
   if (resultado !== null) {
     return (
       <main className="container py-5">
         <div className="card shadow-sm">
           <div className="card-body p-4">
-
-            <h1 className={
-              resultado.exitosa
-                ? "h2 text-success"
-                : "h2 text-danger"
-            }>
-              {resultado.exitosa
-                ? "Compra simulada exitosa"
-                : "Pago simulado rechazado"}
+            <h1 className={resultado.exitosa ? "h2 text-success" : "h2 text-danger"}>
+              {resultado.exitosa ? "Compra simulada exitosa" : "Pago simulado rechazado"}
             </h1>
 
             <p>
-              Cliente: {resultado.cliente.nombre}
-              {" "}{resultado.cliente.apellido}
+              Cliente: {resultado.cliente.nombre} {resultado.cliente.apellido}
             </p>
-
-            <p>
-              Correo: {resultado.cliente.correo}
-            </p>
+            <p>Correo: {resultado.cliente.correo}</p>
 
             <h2 className="h4">Resumen del pedido</h2>
-
             {resultado.productos.map((producto) => (
               <p key={producto.id}>
-                {producto.nombre} x {producto.cantidad}
-                {" - $"}
-                {(producto.precio * producto.cantidad)
-                  .toLocaleString("es-CL")}
+                {producto.nombre} x {producto.cantidad} - $
+                {(producto.precio * producto.cantidad).toLocaleString("es-CL")}
               </p>
             ))}
 
-            <h3 className="h4">
-              Total: ${resultado.total.toLocaleString("es-CL")}
-            </h3>
+            <h3 className="h4">Total: ${resultado.total.toLocaleString("es-CL")}</h3>
 
             <p className="text-muted">
-              Esta operación es una simulación académica.
-              No se realizaron cobros reales.
+              Esta operación es una simulación académica. No se realizaron cobros reales.
             </p>
 
-            {resultado.exitosa ? (
-              <Link to="/" className="btn btn-success">
-                Volver a la tienda
-              </Link>
-            ) : (
-              <Button
-                onClick={() => setResultado(null)}
-              >
-                Volver a intentar
-              </Button>
-            )}
-
+            <div className="d-flex gap-2">
+              {resultado.exitosa ? (
+                <>
+                  <Link to="/" className="btn btn-success">
+                    Volver a la tienda
+                  </Link>
+                  <Link to="/cliente/compras" className="btn btn-outline-primary">
+                    📦 Ver Mis Compras
+                  </Link>
+                </>
+              ) : (
+                <Button onClick={() => setResultado(null)}>Volver a intentar</Button>
+              )}
+            </div>
           </div>
         </div>
       </main>
     );
   }
 
-  // Verificar que existan productos
   if (carrito.length === 0) {
     return (
-      <main className="container py-5">
+      <main className="container py-5 text-center">
         <h1 className="h2">Finalizar compra</h1>
-        <p>No tienes productos en el carrito.</p>
-
-        <Link to="/" className="btn btn-primary">
+        <p className="text-muted">No tienes productos en el carrito.</p>
+        <Link to="/productos" className="btn btn-warning fw-bold">
           Volver al catálogo
         </Link>
       </main>
@@ -172,7 +155,6 @@ function Checkout({ carrito, onCompraExitosa }) {
 
   return (
     <main className="container py-5">
-
       <h1 className="h2 mb-4">Finalizar compra</h1>
 
       <p className="alert alert-info">
@@ -181,12 +163,8 @@ function Checkout({ carrito, onCompraExitosa }) {
 
       <Row className="g-4">
         <Col xs={12} lg={7}>
-
           <Form onSubmit={enviar} noValidate>
-
-            <h2 className="h4 mb-3">
-              Información del cliente
-            </h2>
+            <h2 className="h4 mb-3">Información del cliente</h2>
 
             <Form.Group className="mb-3" controlId="nombre">
               <Form.Label>Nombre</Form.Label>
@@ -228,32 +206,18 @@ function Checkout({ carrito, onCompraExitosa }) {
               </Form.Control.Feedback>
             </Form.Group>
 
-            <h2 className="h4 mt-4">
-              Método de entrega
-            </h2>
-
+            <h2 className="h4 mt-4">Método de entrega</h2>
             <Form.Group className="mb-3" controlId="entrega">
               <Form.Label>Seleccionar entrega</Form.Label>
-              <Form.Select
-                name="entrega"
-                value={datos.entrega}
-                onChange={cambiar}
-              >
-                <option value="domicilio">
-                  Despacho a domicilio
-                </option>
-                <option value="retiro">
-                  Retiro en tienda
-                </option>
+              <Form.Select name="entrega" value={datos.entrega} onChange={cambiar}>
+                <option value="domicilio">Despacho a domicilio</option>
+                <option value="retiro">Retiro en tienda</option>
               </Form.Select>
             </Form.Group>
 
             {datos.entrega === "domicilio" && (
               <>
-                <h2 className="h4 mt-4">
-                  Dirección de entrega
-                </h2>
-
+                <h2 className="h4 mt-4">Dirección de entrega</h2>
                 <Row>
                   <Col md={8}>
                     <Form.Group className="mb-3" controlId="calle">
@@ -313,9 +277,7 @@ function Checkout({ carrito, onCompraExitosa }) {
                 </Form.Group>
 
                 <Form.Group className="mb-3" controlId="indicaciones">
-                  <Form.Label>
-                    Indicaciones adicionales (opcional)
-                  </Form.Label>
+                  <Form.Label>Indicaciones adicionales (opcional)</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={3}
@@ -327,30 +289,18 @@ function Checkout({ carrito, onCompraExitosa }) {
               </>
             )}
 
-            <h2 className="h4 mt-4">
-              Simulación de pago
-            </h2>
-
+            <h2 className="h4 mt-4">Simulación de pago</h2>
             <Form.Group className="mb-3" controlId="pago">
               <Form.Label>Resultado del pago</Form.Label>
-              <Form.Select
-                name="pago"
-                value={datos.pago}
-                onChange={cambiar}
-              >
-                <option value="aprobado">
-                  Simular pago aprobado
-                </option>
-                <option value="rechazado">
-                  Simular pago rechazado
-                </option>
+              <Form.Select name="pago" value={datos.pago} onChange={cambiar}>
+                <option value="aprobado">Simular pago aprobado</option>
+                <option value="rechazado">Simular pago rechazado</option>
               </Form.Select>
             </Form.Group>
 
-            <Button type="submit" variant="success">
+            <Button type="submit" variant="success" className="w-100 fw-bold py-2">
               Finalizar compra
             </Button>
-
           </Form>
         </Col>
 
@@ -358,25 +308,15 @@ function Checkout({ carrito, onCompraExitosa }) {
           <div className="card shadow-sm">
             <div className="card-body">
               <h2 className="h4">Resumen del carrito</h2>
-
               {carrito.map((producto) => (
                 <p key={producto.id}>
-                  {producto.nombre} x {producto.cantidad}
-                  {" - $"}
-                  {(producto.precio * producto.cantidad)
-                    .toLocaleString("es-CL")}
+                  {producto.nombre} x {producto.cantidad} - $
+                  {(producto.precio * producto.cantidad).toLocaleString("es-CL")}
                 </p>
               ))}
-
               <hr />
-
-              <h3 className="h4">
-                Total: ${total.toLocaleString("es-CL")}
-              </h3>
-
-              <Link to="/carrito">
-                Volver al carrito
-              </Link>
+              <h3 className="h4">Total: ${total.toLocaleString("es-CL")}</h3>
+              <Link to="/carrito">Volver al carrito</Link>
             </div>
           </div>
         </Col>
