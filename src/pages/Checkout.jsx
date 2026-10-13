@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Form, Button, Row, Col } from "react-bootstrap";
+import { formatearPrecio } from "../utils/precio";
+import { guardarOrdenCliente, obtenerSesion } from "../utils/persistencia";
+import { calcularTotal } from "../utils/carrito";
 
 function Checkout({ carrito, onCompraExitosa }) {
-  // Autocompletar datos del cliente si tiene sesión iniciada
-  const sesionGuardada = localStorage.getItem("usuario_sesion");
-  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
+  // Uso limpio de la utilidad de sesión
+  const usuario = obtenerSesion();
 
   const [datos, setDatos] = useState({
     nombre: usuario?.nombre || "",
@@ -24,10 +26,8 @@ function Checkout({ carrito, onCompraExitosa }) {
   const [errores, setErrores] = useState({});
   const [resultado, setResultado] = useState(null);
 
-  let total = 0;
-  carrito.forEach((producto) => {
-    total += producto.precio * producto.cantidad;
-  });
+  // Uso limpio de la utilidad de cálculo
+  const total = calcularTotal(carrito);
 
   function cambiar(evento) {
     const { name, value } = evento.target;
@@ -41,14 +41,8 @@ function Checkout({ carrito, onCompraExitosa }) {
     evento.preventDefault();
     const nuevosErrores = {};
 
-    if (!datos.nombre.trim()) {
-      nuevosErrores.nombre = "El nombre es obligatorio";
-    }
-
-    if (!datos.apellido.trim()) {
-      nuevosErrores.apellido = "El apellido es obligatorio";
-    }
-
+    if (!datos.nombre.trim()) nuevosErrores.nombre = "El nombre es obligatorio";
+    if (!datos.apellido.trim()) nuevosErrores.apellido = "El apellido es obligatorio";
     if (!datos.correo.includes("@") || !datos.correo.includes(".")) {
       nuevosErrores.correo = "Ingresa un correo válido";
     }
@@ -65,21 +59,14 @@ function Checkout({ carrito, onCompraExitosa }) {
 
     const compraExitosa = datos.pago === "aprobado";
 
-    // GUARDAR EN HISTORIAL SI EL PAGO FUE APROBADO
     if (compraExitosa) {
-      const nuevaOrden = {
+      guardarOrdenCliente({
         id: `#${Date.now().toString().slice(-8)}`,
         fecha: new Date().toISOString().split("T")[0],
         total: total,
         items: carrito.map((p) => `${p.nombre} (${p.cantidad})`).join(", "),
         estado: "Pagado"
-      };
-
-      const historialPrevio = JSON.parse(localStorage.getItem("ordenes_compras_cliente") || "[]");
-      localStorage.setItem(
-        "ordenes_compras_cliente",
-        JSON.stringify([nuevaOrden, ...historialPrevio])
-      );
+      });
 
       onCompraExitosa();
     }
@@ -92,7 +79,6 @@ function Checkout({ carrito, onCompraExitosa }) {
     });
   }
 
-  // Vista de confirmación del pedido
   if (resultado !== null) {
     return (
       <main className="container py-5">
@@ -102,20 +88,17 @@ function Checkout({ carrito, onCompraExitosa }) {
               {resultado.exitosa ? "Compra simulada exitosa" : "Pago simulado rechazado"}
             </h1>
 
-            <p>
-              Cliente: {resultado.cliente.nombre} {resultado.cliente.apellido}
-            </p>
+            <p>Cliente: {resultado.cliente.nombre} {resultado.cliente.apellido}</p>
             <p>Correo: {resultado.cliente.correo}</p>
 
             <h2 className="h4">Resumen del pedido</h2>
             {resultado.productos.map((producto) => (
               <p key={producto.id}>
-                {producto.nombre} x {producto.cantidad} - $
-                {(producto.precio * producto.cantidad).toLocaleString("es-CL")}
+                {producto.nombre} x {producto.cantidad} - {formatearPrecio(producto.precio * producto.cantidad)}
               </p>
             ))}
 
-            <h3 className="h4">Total: ${resultado.total.toLocaleString("es-CL")}</h3>
+            <h3 className="h4">Total: {formatearPrecio(resultado.total)}</h3>
 
             <p className="text-muted">
               Esta operación es una simulación académica. No se realizaron cobros reales.
@@ -310,12 +293,11 @@ function Checkout({ carrito, onCompraExitosa }) {
               <h2 className="h4">Resumen del carrito</h2>
               {carrito.map((producto) => (
                 <p key={producto.id}>
-                  {producto.nombre} x {producto.cantidad} - $
-                  {(producto.precio * producto.cantidad).toLocaleString("es-CL")}
+                  {producto.nombre} x {producto.cantidad} - {formatearPrecio(producto.precio * producto.cantidad)}
                 </p>
               ))}
               <hr />
-              <h3 className="h4">Total: ${total.toLocaleString("es-CL")}</h3>
+              <h3 className="h4">Total: {formatearPrecio(total)}</h3>
               <Link to="/carrito">Volver al carrito</Link>
             </div>
           </div>

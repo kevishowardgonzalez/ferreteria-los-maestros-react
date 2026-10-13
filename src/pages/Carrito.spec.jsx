@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 
-import Carrito from "./Carrito";
+import Carrito from "../pages/Carrito";
 
 describe("Pruebas unitarias - Carrito de compras", () => {
 
@@ -25,9 +25,9 @@ describe("Pruebas unitarias - Carrito de compras", () => {
       <BrowserRouter>
         <Carrito
           carrito={[]}
-          onCambiarCantidad={() => {}}
-          onEliminar={() => {}}
-          onVaciar={() => {}}
+          onCambiarCantidad={() => { }}
+          onEliminar={() => { }}
+          onVaciar={() => { }}
         />
       </BrowserRouter>
     );
@@ -45,9 +45,9 @@ describe("Pruebas unitarias - Carrito de compras", () => {
       <BrowserRouter>
         <Carrito
           carrito={carrito}
-          onCambiarCantidad={() => {}}
-          onEliminar={() => {}}
-          onVaciar={() => {}}
+          onCambiarCantidad={() => { }}
+          onEliminar={() => { }}
+          onVaciar={() => { }}
         />
       </BrowserRouter>
     );
@@ -69,9 +69,9 @@ describe("Pruebas unitarias - Carrito de compras", () => {
       <BrowserRouter>
         <Carrito
           carrito={carrito}
-          onCambiarCantidad={() => {}}
+          onCambiarCantidad={() => { }}
           onEliminar={eliminarMock}
-          onVaciar={() => {}}
+          onVaciar={() => { }}
         />
       </BrowserRouter>
     );
@@ -99,8 +99,8 @@ describe("Pruebas unitarias - Carrito de compras", () => {
         <Carrito
           carrito={carrito}
           onCambiarCantidad={cambiarCantidadMock}
-          onEliminar={() => {}}
-          onVaciar={() => {}}
+          onEliminar={() => { }}
+          onVaciar={() => { }}
         />
       </BrowserRouter>
     );
@@ -124,8 +124,8 @@ describe("Pruebas unitarias - Carrito de compras", () => {
         <Carrito
           carrito={carrito}
           onCambiarCantidad={cambiarCantidadMock}
-          onEliminar={() => {}}
-          onVaciar={() => {}}
+          onEliminar={() => { }}
+          onVaciar={() => { }}
         />
       </BrowserRouter>
     );

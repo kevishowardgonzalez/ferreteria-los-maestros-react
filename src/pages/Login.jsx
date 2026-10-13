@@ -17,21 +17,21 @@ function Login() {
 
     // 1. Rol ADMINISTRADOR -> Va a /admin
     if (mail === "admin@duoc.cl" || mail.includes("admin")) {
-      const sesion = { correo: mail, nombre: "Kevis Admin", rol: "Administrador" };
+      const sesion = { correo: mail, nombre: "Kevis Howard", rol: "Administrador" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido Administrador");
       window.location.href = "/admin";
-    } 
+    }
     // 2. Rol VENDEDOR -> Va a /vendedor/productos
     else if (mail === "vendedor@duoc.cl" || mail.includes("vendedor") || mail.includes("javier")) {
       const sesion = { correo: mail, nombre: "Javier Cruz", rol: "Vendedor" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido Vendedor");
       window.location.href = "/vendedor/productos";
-    } 
+    }
     // 3. Rol CLIENTE -> Va a la tienda pública
     else {
-      const sesion = { correo: mail, nombre: "Carlos Cliente", rol: "Cliente" };
+      const sesion = { correo: mail, nombre: "Yerickson Rodríguez", rol: "Cliente" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido a Ferretería Los Maestros");
       window.location.href = "/";

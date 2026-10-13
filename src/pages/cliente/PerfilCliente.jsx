@@ -7,8 +7,8 @@ function PerfilCliente() {
   const sesion = localStorage.getItem("usuario_sesion");
   const usuario = sesion ? JSON.parse(sesion) : null;
 
-  const [nombre, setNombre] = useState(usuario?.nombre || "Carlos Maestro");
-  const [correo] = useState(usuario?.correo || "carlos@gmail.com");
+  const [nombre, setNombre] = useState(usuario?.nombre || "Yerickson Maestro");
+  const [correo] = useState(usuario?.correo || "yerickson@gmail.com");
   const [telefono, setTelefono] = useState("+56 9 8765 4321");
   const [direccion, setDireccion] = useState("Av. Balmaceda 1234, Depto 402");
   const [comuna, setComuna] = useState("La Serena");
