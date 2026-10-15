@@ -37,3 +37,25 @@ export function guardarOrdenCliente(nuevaOrden) {
     JSON.stringify([nuevaOrden, ...previas])
   );
 }
+
+
+/* Persistencia de productos de la ferretería */
+
+// Obtener los productos guardados
+export function obtenerProductos(productosIniciales) {
+  const guardados = localStorage.getItem(
+    "productos_los_maestros"
+  );
+
+  return guardados
+    ? JSON.parse(guardados)
+    : productosIniciales;
+}
+
+// Guardar los productos actualizados
+export function guardarProductos(productos) {
+  localStorage.setItem(
+    "productos_los_maestros",
+    JSON.stringify(productos)
+  );
+}

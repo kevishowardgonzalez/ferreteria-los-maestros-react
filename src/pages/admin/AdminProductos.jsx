@@ -2,10 +2,9 @@
 import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import FormularioProducto from "./FormularioProducto";
-import { productos as listaInicial } from "../../data/productos";
 
-function AdminProductos() {
-  const [lista, setLista] = useState(listaInicial);
+
+function AdminProductos({ productos, setProductos }) {
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [productoAEditar, setProductoAEditar] = useState(null);
@@ -15,25 +14,53 @@ function AdminProductos() {
   const esVendedor = usuario?.rol === "Vendedor";
 
   // AGREGAR O ACTUALIZAR (EDITAR)
-  function guardarProducto(producto) {
-    if (productoAEditar) {
-      setLista(lista.map((item) => (item.id === producto.id ? producto : item)));
-      setMensaje(`Producto "${producto.nombre}" actualizado con éxito.`);
-      setProductoAEditar(null);
-    } else {
-      setLista([...lista, producto]);
-      setMensaje(`Producto "${producto.nombre}" registrado con éxito.`);
-    }
-  }
+  // AGREGAR O ACTUALIZAR PRODUCTO
+// AGREGAR O ACTUALIZAR PRODUCTO
+function guardarProducto(producto) {
+  if (productoAEditar) {
+    // Actualizar un producto existente
+    setProductos((anteriores) =>
+      anteriores.map((item) =>
+        item.id === producto.id ? producto : item
+      )
+    );
 
-  // ELIMINAR
-  function eliminarProducto(id) {
-    if (confirm("¿Seguro que deseas eliminar este producto del inventario?")) {
-      setLista(lista.filter((item) => item.id !== id));
-      if (productoAEditar?.id === id) setProductoAEditar(null);
-      setMensaje("Producto eliminado correctamente.");
-    }
+    setMensaje(
+      `Producto "${producto.nombre}" actualizado con éxito.`
+    );
+
+    setProductoAEditar(null);
+  } else {
+    // Agregar un producto nuevo
+    setProductos((anteriores) => [
+      ...anteriores,
+      producto
+    ]);
+
+    setMensaje(
+      `Producto "${producto.nombre}" registrado con éxito.`
+    );
   }
+}
+
+// ELIMINAR PRODUCTO
+function eliminarProducto(id) {
+  if (
+    window.confirm(
+      "¿Seguro que deseas eliminar este producto del inventario?"
+    )
+  ) {
+    setProductos((anteriores) =>
+      anteriores.filter((item) => item.id !== id)
+    );
+
+    if (productoAEditar?.id === id) {
+      setProductoAEditar(null);
+    }
+
+    setMensaje("Producto eliminado correctamente.");
+  }
+}
 
   // CONSULTAR DETALLE
   function verDetalle(prod) {
@@ -49,13 +76,13 @@ function AdminProductos() {
   }
 
   // FILTRO DE CONSULTA RÁPIDA
-  const productosFiltrados = lista.filter(
+  const productosFiltrados = productos.filter(
     (item) =>
       item.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       item.categoria.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const stockCritico = lista.filter((prod) => prod.stock <= 5).length;
+  const stockCritico = productos.filter((prod) => prod.stock <= 5).length;
 
   return (
     <div className="d-flex min-vh-100 bg-light w-100">
@@ -74,7 +101,7 @@ function AdminProductos() {
             </p>
           </div>
           <span className="badge bg-primary fs-6">
-            Total en catálogo: {lista.length}
+            Total en catálogo: {productos.length}
           </span>
         </header>
 
@@ -83,7 +110,7 @@ function AdminProductos() {
           <div className="col-12 col-md-4">
             <div className="card shadow-sm border-0 p-3 bg-white h-100">
               <span className="text-muted small">Total de Productos</span>
-              <p className="fs-3 fw-bold mb-0 text-primary">{lista.length}</p>
+              <p className="fs-3 fw-bold mb-0 text-primary">{productos.length}</p>
             </div>
           </div>
           <div className="col-12 col-md-4">

@@ -38,12 +38,17 @@ import MisCompras from "./pages/cliente/MisCompras";
 import PerfilCliente from "./pages/cliente/PerfilCliente";
 
 import { productos as listaInicial } from "./data/productos";
-import { guardarCarrito } from "./utils/persistencia";
+import { guardarCarrito, obtenerProductos, guardarProductos } from "./utils/persistencia";
 import { Form, Button } from "react-bootstrap";
 
 function App() {
-  const [productos] = useState(listaInicial);
+  const [productos, setProductos] = useState(
+    () => obtenerProductos(listaInicial)
+  );
   const [categoria, setCategoria] = useState("Todas");
+  useEffect(() => {
+    guardarProductos(productos);
+  }, [productos]);
   const [carrito, setCarrito] = useState(() => {
     const guardados = localStorage.getItem("carrito_los_maestros");
     return guardados ? JSON.parse(guardados) : [];
@@ -163,7 +168,9 @@ function App() {
           <div className="bg-light min-vh-100 d-flex flex-column">
             <Cabecera />
             <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><DetalleProducto /></div>
+            <div className="flex-grow-1">
+             <DetalleProducto productos={productos} />
+            </div>
             <PiePagina />
           </div>
         }
@@ -303,7 +310,15 @@ function App() {
 
       {/* RUTAS DE ADMINISTRADOR (Panel limpio e independiente) */}
       <Route path="/admin" element={<HomeAdmin />} />
-      <Route path="/admin/productos" element={<AdminProductos />} />
+      <Route
+        path="/admin/productos"
+        element={
+          <AdminProductos
+            productos={productos}
+            setProductos={setProductos}
+          />
+        }
+      />
       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
       <Route path="/admin/categorias" element={<AdminCategorias />} />
       <Route path="/admin/ordenes" element={<AdminOrdenes />} />
