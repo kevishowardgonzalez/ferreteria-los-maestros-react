@@ -1,102 +1,131 @@
-import { useState } from "react";
+// src/pages/admin/FormularioProducto.jsx
+import { useState, useEffect } from "react";
 import { Button, Form } from "react-bootstrap";
 
 const inicial = { nombre: "", categoria: "", precio: "", stock: "" };
 
-function FormularioProducto({ onGuardar }) {
-    const [datos, setDatos] = useState(inicial);
-    const [errores, setErrores] = useState({});
+function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
+  const [datos, setDatos] = useState(inicial);
+  const [errores, setErrores] = useState({});
 
-    function cambiar(evento) {
-        const { name, value } = evento.target;
-        setDatos({ ...datos, [name]: value });
+  // Carga los datos en el formulario si se presiona "Editar"
+  useEffect(() => {
+    if (productoAEditar) {
+      setDatos(productoAEditar);
+    } else {
+      setDatos(inicial);
     }
+  }, [productoAEditar]);
 
-    function enviar(evento) {
-        evento.preventDefault();
-        const nuevosErrores = {};
+  function cambiar(evento) {
+    const { name, value } = evento.target;
+    setDatos({ ...datos, [name]: value });
+  }
 
-        if (!datos.nombre.trim()) nuevosErrores.nombre = "Nombre obligatorio";
-        if (!datos.categoria) nuevosErrores.categoria = "Selecciona categoría";
-        if (Number(datos.precio) <= 0) nuevosErrores.precio = "Precio debe ser mayor a 0";
-        if (Number(datos.stock) < 0) nuevosErrores.stock = "El stock no puede ser negativo";
+  function enviar(evento) {
+    evento.preventDefault();
+    const nuevosErrores = {};
 
-        setErrores(nuevosErrores);
-        if (Object.keys(nuevosErrores).length > 0) return;
+    if (!datos.nombre.trim()) nuevosErrores.nombre = "Nombre obligatorio";
+    if (!datos.categoria) nuevosErrores.categoria = "Selecciona categoría";
+    if (Number(datos.precio) <= 0) nuevosErrores.precio = "Precio debe ser mayor a 0";
+    if (Number(datos.stock) < 0) nuevosErrores.stock = "El stock no puede ser negativo";
 
-        onGuardar({
-            ...datos,
-            precio: Number(datos.precio),
-            stock: Number(datos.stock)
-        });
-        setDatos(inicial);
-    }
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) return;
 
-    return (
-        <Form onSubmit={enviar} noValidate>
-            <Form.Group className="mb-3" controlId="nombre">
-                <Form.Label>Nombre del producto</Form.Label>
-                <Form.Control
-                    name="nombre"
-                    value={datos.nombre}
-                    onChange={cambiar}
-                    isInvalid={Boolean(errores.nombre)}
-                />
-                <Form.Control.Feedback type="invalid">
-                    {errores.nombre}
-                </Form.Control.Feedback>
-            </Form.Group>
+    onGuardar({
+      ...datos,
+      id: datos.id || Date.now(),
+      precio: Number(datos.precio),
+      stock: Number(datos.stock),
+      descripcion: datos.descripcion || "Ingresado desde panel de administración"
+    });
 
-            <Form.Group className="mb-3" controlId="categoria">
-                <Form.Label>Categoría</Form.Label>
-                <Form.Select
-                    name="categoria"
-                    value={datos.categoria}
-                    onChange={cambiar}
-                    isInvalid={Boolean(errores.categoria)}
-                >
-                    <option value="">Selecciona categoría</option>
-                    <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-                    <option value="Construcción">Construcción</option>
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Gasfitería">Gasfitería</option>
-                </Form.Select>
-                <Form.Control.Feedback type="invalid">
-                    {errores.categoria}
-                </Form.Control.Feedback>
-            </Form.Group>
+    setDatos(inicial);
+  }
 
-            <Form.Group className="mb-3" controlId="precio">
-                <Form.Label>Precio</Form.Label>
-                <Form.Control
-                    type="number"
-                    name="precio"
-                    value={datos.precio}
-                    onChange={cambiar}
-                    isInvalid={Boolean(errores.precio)}
-                />
-                <Form.Control.Feedback type="invalid">
-                    {errores.precio}
-                </Form.Control.Feedback>
-            </Form.Group>
+  return (
+    <Form onSubmit={enviar} noValidate>
+      <Form.Group className="mb-3" controlId="formNombre">
+        <Form.Label>Nombre del producto</Form.Label>
+        <Form.Control
+          name="nombre"
+          value={datos.nombre}
+          onChange={cambiar}
+          isInvalid={Boolean(errores.nombre)}
+          placeholder="Ej: Taladro Percutor 20V"
+        />
+        <Form.Control.Feedback type="invalid">
+          {errores.nombre}
+        </Form.Control.Feedback>
+      </Form.Group>
 
-            <Form.Group className="mb-3" controlId="stock">
-                <Form.Label>Stock</Form.Label>
-                <Form.Control
-                    type="number"
-                    name="stock"
-                    value={datos.stock}
-                    onChange={cambiar}
-                    isInvalid={Boolean(errores.stock)}
-                />
-                <Form.Control.Feedback type="invalid">
-                    {errores.stock}
-                </Form.Control.Feedback>
-            </Form.Group>
+      <Form.Group className="mb-3" controlId="formCategoria">
+        <Form.Label>Categoría</Form.Label>
+        <Form.Select
+          name="categoria"
+          value={datos.categoria}
+          onChange={cambiar}
+          isInvalid={Boolean(errores.categoria)}
+        >
+          <option value="">Selecciona categoría</option>
+          <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
+          <option value="Construcción">Construcción</option>
+          <option value="Herramientas Manuales">Herramientas Manuales</option>
+          <option value="Gasfitería">Gasfitería</option>
+          <option value="Pinturas">Pinturas</option>
+          <option value="Electricidad">Electricidad</option>
+        </Form.Select>
+        <Form.Control.Feedback type="invalid">
+          {errores.categoria}
+        </Form.Control.Feedback>
+      </Form.Group>
 
-            <Button type="submit" variant="primary">Guardar Producto</Button>
-        </Form>
-    );
+      <Form.Group className="mb-3" controlId="formPrecio">
+        <Form.Label>Precio ($ CLP)</Form.Label>
+        <Form.Control
+          type="number"
+          name="precio"
+          min="0"
+          value={datos.precio}
+          onChange={cambiar}
+          isInvalid={Boolean(errores.precio)}
+          placeholder="Ej: 59990"
+        />
+        <Form.Control.Feedback type="invalid">
+          {errores.precio}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <Form.Group className="mb-3" controlId="formStock">
+        <Form.Label>Stock inicial / actual</Form.Label>
+        <Form.Control
+          type="number"
+          name="stock"
+          min="0"
+          value={datos.stock}
+          onChange={cambiar}
+          isInvalid={Boolean(errores.stock)}
+          placeholder="Ej: 15"
+        />
+        <Form.Control.Feedback type="invalid">
+          {errores.stock}
+        </Form.Control.Feedback>
+      </Form.Group>
+
+      <div className="d-flex gap-2">
+        <Button type="submit" variant="warning" className="fw-bold">
+          {productoAEditar ? "Actualizar Producto" : "Guardar Producto"}
+        </Button>
+        {productoAEditar && (
+          <Button type="button" variant="secondary" onClick={onCancelarEdicion}>
+            Cancelar
+          </Button>
+        )}
+      </div>
+    </Form>
+  );
 }
 
 export default FormularioProducto;

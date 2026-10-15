@@ -1,20 +1,18 @@
-
+// src/pages/Carrito.jsx
 import { Link } from "react-router-dom";
+import { formatearPrecio } from "../utils/precio";
+import { calcularTotal } from "../utils/carrito";
 
 function Carrito({ carrito, onCambiarCantidad, onEliminar, onVaciar }) {
-  let total = 0;
-
-  carrito.forEach((producto) => {
-    total += producto.precio * producto.cantidad;
-  });
+  const total = calcularTotal(carrito);
 
   if (carrito.length === 0) {
     return (
-      <main className="container py-5">
+      <main className="container py-5 text-center">
         <h1 className="h2 mb-4">Carrito de compras</h1>
-        <p>Tu carrito está vacío.</p>
-        <Link to="/" className="btn btn-primary">
-          Ver productos
+        <p className="text-muted">Tu carrito está vacío.</p>
+        <Link to="/productos" className="btn btn-warning fw-bold">
+          Ver todos los productos
         </Link>
       </main>
     );
@@ -40,11 +38,7 @@ function Carrito({ carrito, onCambiarCantidad, onEliminar, onVaciar }) {
             {carrito.map((producto) => (
               <tr key={producto.id}>
                 <td>{producto.nombre}</td>
-
-                <td>
-                  ${producto.precio.toLocaleString("es-CL")}
-                </td>
-
+                <td>{formatearPrecio(producto.precio)}</td>
                 <td>
                   <div className="d-flex align-items-center gap-2">
                     <button
@@ -73,9 +67,7 @@ function Carrito({ carrito, onCambiarCantidad, onEliminar, onVaciar }) {
                   </div>
                 </td>
 
-                <td>
-                  ${(producto.precio * producto.cantidad).toLocaleString("es-CL")}
-                </td>
+                <td>{formatearPrecio(producto.precio * producto.cantidad)}</td>
 
                 <td>
                   <button
@@ -93,7 +85,7 @@ function Carrito({ carrito, onCambiarCantidad, onEliminar, onVaciar }) {
       </div>
 
       <p className="h4 text-end">
-        Total: ${total.toLocaleString("es-CL")}
+        Total: {formatearPrecio(total)}
       </p>
 
       <div className="d-flex justify-content-end gap-2 flex-wrap">
@@ -105,7 +97,7 @@ function Carrito({ carrito, onCambiarCantidad, onEliminar, onVaciar }) {
           Vaciar carrito
         </button>
 
-        <Link to="/" className="btn btn-outline-secondary">
+        <Link to="/productos" className="btn btn-outline-secondary">
           Seguir comprando
         </Link>
 
