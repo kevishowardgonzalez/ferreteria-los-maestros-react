@@ -1,10 +1,11 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   function manejarLogin(e) {
     e.preventDefault();
@@ -20,21 +21,21 @@ function Login() {
       const sesion = { correo: mail, nombre: "Kevis Howard", rol: "Administrador" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido Administrador");
-      window.location.href = "/admin";
+      navigate("/admin");
     }
     // 2. Rol VENDEDOR -> Va a /vendedor/productos
     else if (mail === "vendedor@duoc.cl" || mail.includes("vendedor") || mail.includes("javier")) {
       const sesion = { correo: mail, nombre: "Javier Cruz", rol: "Vendedor" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido Vendedor");
-      window.location.href = "/vendedor/productos";
+      navigate("/vendedor/productos");
     }
     // 3. Rol CLIENTE -> Va a la tienda pública
     else {
       const sesion = { correo: mail, nombre: "Yerickson Rodríguez", rol: "Cliente" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido a Ferretería Los Maestros");
-      window.location.href = "/";
+      navigate("/");
     }
   }
 
@@ -63,7 +64,6 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Entre 4 y 10 caracteres"
               minLength={4}
-              maxLength={10}
               required
             />
           </div>

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/24</span>
+                <span class='fraction'>25/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.3% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>20/24</span>
+                <span class='fraction'>25/25</span>
             </div>
         
             
@@ -149,17 +149,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">89x</span>
-<span class="cline-any cline-yes">89x</span>
+<span class="cline-any cline-yes">147x</span>
+<span class="cline-any cline-yes">147x</span>
+<span class="cline-any cline-yes">147x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -169,13 +177,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -184,7 +185,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">89x</span>
+<span class="cline-any cline-yes">147x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -195,7 +196,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">62x</span>
+<span class="cline-any cline-yes">95x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -206,8 +207,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">45x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -227,11 +227,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// src/pages/Login.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 &nbsp;
 function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 &nbsp;
   function manejarLogin(e) {
     e.preventDefault();
@@ -247,21 +248,21 @@ function Login() {
       const sesion = { correo: mail, nombre: "Kevis Howard", rol: "Administrador" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido Administrador");
-      window.location.href = "/admin";
+      navigate("/admin");
     }
     // 2. Rol VENDEDOR -&gt; Va a /vendedor/productos
-    else <span class="missing-if-branch" title="if path not taken" >I</span>if (mail === "vendedor@duoc.cl" || mail.includes("vendedor") || mail.includes("javier")) {
-      const sesion = <span class="cstat-no" title="statement not covered" >{ correo: mail, nombre: "Javier Cruz", rol: "Vendedor" };</span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem("usuario_sesion", JSON.stringify(sesion));</span>
-<span class="cstat-no" title="statement not covered" >      alert("Bienvenido Vendedor");</span>
-<span class="cstat-no" title="statement not covered" >      window.location.href = "/vendedor/productos";</span>
+    else if (mail === "vendedor@duoc.cl" || mail.includes("vendedor") || mail.includes("javier")) {
+      const sesion = { correo: mail, nombre: "Javier Cruz", rol: "Vendedor" };
+      localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
+      alert("Bienvenido Vendedor");
+      navigate("/vendedor/productos");
     }
     // 3. Rol CLIENTE -&gt; Va a la tienda pública
     else {
       const sesion = { correo: mail, nombre: "Yerickson Rodríguez", rol: "Cliente" };
       localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
       alert("Bienvenido a Ferretería Los Maestros");
-      window.location.href = "/";
+      navigate("/");
     }
   }
 &nbsp;
@@ -290,7 +291,6 @@ function Login() {
               onChange={(e) =&gt; setPassword(e.target.value)}
               placeholder="Entre 4 y 10 caracteres"
               minLength={4}
-              maxLength={10}
               required
             /&gt;
           &lt;/div&gt;
@@ -313,7 +313,7 @@ export default Login;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-11T01:00:19.712Z
+                at 2026-11-11T13:34:28.317Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
