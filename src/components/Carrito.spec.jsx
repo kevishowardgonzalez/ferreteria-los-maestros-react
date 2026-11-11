@@ -2,26 +2,25 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
 import Carrito from "./Carrito";
 
-function renderConRouter(ui) {
-  return render(<BrowserRouter>{ui}</BrowserRouter>);
-}
+vi.mock("react-router-dom", () => ({
+  Link: ({ children, to }) => <a href={to}>{children}</a>,
+}));
 
-describe("Pruebas Unitarias - Componente Carrito", () => {
+describe("Carrito", () => {
   const carritoPrueba = [
     {
       id: 1,
       nombre: "Taladro Percutor 20V",
       precio: 59990,
       cantidad: 2,
-      stock: 5,
+      stock: 6,
     },
   ];
 
   it("muestra el mensaje de carrito vacío cuando no hay ítems", () => {
-    renderConRouter(
+    render(
       <Carrito
         carrito={[]}
         onCambiarCantidad={() => {}}
@@ -35,7 +34,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
   });
 
   it("renderiza el nombre del producto y calcula el total acumulado", () => {
-    renderConRouter(
+    render(
       <Carrito
         carrito={carritoPrueba}
         onCambiarCantidad={() => {}}
@@ -45,7 +44,6 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
     );
 
     expect(screen.getByText("Taladro Percutor 20V")).toBeInTheDocument();
-    // 59.990 * 2 = 119.980
     expect(screen.getByText(/Total:\s*\$119\.980/i)).toBeInTheDocument();
   });
 
@@ -53,7 +51,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
     const usuario = userEvent.setup();
     const mockCambiarCantidad = vi.fn();
 
-    renderConRouter(
+    render(
       <Carrito
         carrito={carritoPrueba}
         onCambiarCantidad={mockCambiarCantidad}
@@ -62,8 +60,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
       />
     );
 
-    const botonAumentar = screen.getByRole("button", { name: "+" });
-    await usuario.click(botonAumentar);
+    await usuario.click(screen.getByRole("button", { name: "+" }));
 
     expect(mockCambiarCantidad).toHaveBeenCalledTimes(1);
     expect(mockCambiarCantidad).toHaveBeenCalledWith(1, 3);
@@ -73,7 +70,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
     const usuario = userEvent.setup();
     const mockCambiarCantidad = vi.fn();
 
-    renderConRouter(
+    render(
       <Carrito
         carrito={carritoPrueba}
         onCambiarCantidad={mockCambiarCantidad}
@@ -82,8 +79,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
       />
     );
 
-    const botonDisminuir = screen.getByRole("button", { name: "-" });
-    await usuario.click(botonDisminuir);
+    await usuario.click(screen.getByRole("button", { name: "-" }));
 
     expect(mockCambiarCantidad).toHaveBeenCalledTimes(1);
     expect(mockCambiarCantidad).toHaveBeenCalledWith(1, 1);
@@ -93,7 +89,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
     const usuario = userEvent.setup();
     const mockEliminar = vi.fn();
 
-    renderConRouter(
+    render(
       <Carrito
         carrito={carritoPrueba}
         onCambiarCantidad={() => {}}
@@ -102,8 +98,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
       />
     );
 
-    const botonEliminar = screen.getByRole("button", { name: /eliminar/i });
-    await usuario.click(botonEliminar);
+    await usuario.click(screen.getByRole("button", { name: /eliminar/i }));
 
     expect(mockEliminar).toHaveBeenCalledWith(1);
   });
@@ -112,7 +107,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
     const usuario = userEvent.setup();
     const mockVaciar = vi.fn();
 
-    renderConRouter(
+    render(
       <Carrito
         carrito={carritoPrueba}
         onCambiarCantidad={() => {}}
@@ -121,8 +116,7 @@ describe("Pruebas Unitarias - Componente Carrito", () => {
       />
     );
 
-    const botonVaciar = screen.getByRole("button", { name: /vaciar carrito/i });
-    await usuario.click(botonVaciar);
+    await usuario.click(screen.getByRole("button", { name: /vaciar carrito/i }));
 
     expect(mockVaciar).toHaveBeenCalledTimes(1);
   });

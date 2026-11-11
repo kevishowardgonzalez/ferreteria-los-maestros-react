@@ -2,14 +2,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
 import Registro from "./Registro";
 
-function renderConRouter(ui) {
-  return render(<BrowserRouter>{ui}</BrowserRouter>);
-}
+vi.mock("react-router-dom", () => ({
+  Link: ({ children, to }) => <a href={to}>{children}</a>,
+}));
 
-describe("Pruebas Unitarias - Componente Registro", () => {
+describe("Registro", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.spyOn(window, "alert").mockImplementation(() => {});
@@ -20,7 +19,7 @@ describe("Pruebas Unitarias - Componente Registro", () => {
   });
 
   it("renderiza todos los campos requeridos para el alta de usuario", () => {
-    renderConRouter(<Registro />);
+    render(<Registro />);
 
     expect(screen.getByLabelText(/^nombre$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^apellido$/i)).toBeInTheDocument();
@@ -31,7 +30,7 @@ describe("Pruebas Unitarias - Componente Registro", () => {
 
   it("permite escribir en los campos del formulario", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Registro />);
+    render(<Registro />);
 
     const inputNombre = screen.getByLabelText(/^nombre$/i);
     const inputPass = screen.getByLabelText(/contraseña/i);
@@ -45,7 +44,7 @@ describe("Pruebas Unitarias - Componente Registro", () => {
 
   it("registra exitosamente un usuario nuevo mostrando el mensaje de bienvenida", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Registro />);
+    render(<Registro />);
 
     await usuario.type(screen.getByLabelText(/^nombre$/i), "Yerickson");
     await usuario.type(screen.getByLabelText(/^apellido$/i), "Rodríguez");

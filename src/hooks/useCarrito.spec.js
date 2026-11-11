@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useCarrito } from "./useCarrito";
 
-describe("4. Custom Hook - useCarrito", () => {
+describe("useCarrito", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -47,7 +47,7 @@ describe("4. Custom Hook - useCarrito", () => {
 
     act(() => {
       result.current.agregarAlCarrito(producto);
-      result.current.agregarAlCarrito(producto); // Segundo intento supera stock
+      result.current.agregarAlCarrito(producto);
     });
 
     expect(alertaEspia).toHaveBeenCalled();

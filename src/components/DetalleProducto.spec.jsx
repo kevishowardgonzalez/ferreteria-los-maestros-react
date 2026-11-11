@@ -1,10 +1,15 @@
 // src/components/DetalleProducto.spec.jsx
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
 import DetalleProducto from "./DetalleProducto";
 
-describe("6. Componente DetalleProducto (Ficha técnica y rutas)", () => {
+let mockId = "1";
+vi.mock("react-router-dom", () => ({
+  useParams: () => ({ id: mockId }),
+  Link: ({ children, to }) => <a href={to}>{children}</a>,
+}));
+
+describe("DetalleProducto", () => {
   const inventario = [
     {
       id: 1,
@@ -24,46 +29,39 @@ describe("6. Componente DetalleProducto (Ficha técnica y rutas)", () => {
     },
   ];
 
-  function renderDetalle(idRuta) {
-    return render(
-      <MemoryRouter initialEntries={[`/productos/${idRuta}`]}>
-        <Routes>
-          <Route
-            path="/productos/:id"
-            element={<DetalleProducto productos={inventario} />}
-          />
-        </Routes>
-      </MemoryRouter>
-    );
-  }
-
   it("encuentra y renderiza el producto correspondiente al ID de la URL", () => {
-    renderDetalle(1);
+    mockId = "1";
+    render(<DetalleProducto productos={inventario} />);
     expect(screen.getByRole("heading", { name: "Taladro Percutor 20V" })).toBeInTheDocument();
   });
 
   it("muestra la descripción extendida del producto", () => {
-    renderDetalle(1);
+    mockId = "1";
+    render(<DetalleProducto productos={inventario} />);
     expect(screen.getByText("Motor sin carbones brushless")).toBeInTheDocument();
   });
 
   it("muestra la cantidad exacta de unidades disponibles en bodega", () => {
-    renderDetalle(1);
+    mockId = "1";
+    render(<DetalleProducto productos={inventario} />);
     expect(screen.getByText(/5 unidades/i)).toBeInTheDocument();
   });
 
   it("muestra advertencia de producto sin stock cuando stock es 0", () => {
-    renderDetalle(2);
+    mockId = "2";
+    render(<DetalleProducto productos={inventario} />);
     expect(screen.getByText(/producto sin stock disponible/i)).toBeInTheDocument();
   });
 
   it("renderiza mensaje de error 'Producto no encontrado' para IDs inexistentes", () => {
-    renderDetalle(999);
+    mockId = "999";
+    render(<DetalleProducto productos={inventario} />);
     expect(screen.getByText("Producto no encontrado")).toBeInTheDocument();
   });
 
   it("proporciona un botón para volver al catálogo cuando el producto no existe", () => {
-    renderDetalle(999);
+    mockId = "999";
+    render(<DetalleProducto productos={inventario} />);
     const enlace = screen.getByRole("link", { name: /volver al catálogo/i });
     expect(enlace).toHaveAttribute("href", "/productos");
   });

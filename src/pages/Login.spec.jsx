@@ -2,15 +2,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
 import Login from "./Login";
 
-function renderConRouter(ui) {
-  return render(<BrowserRouter>{ui}</BrowserRouter>);
-}
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+  Link: ({ children, to }) => <a href={to}>{children}</a>,
+}));
 
-describe("Pruebas Unitarias - Componente Login", () => {
+describe("Login", () => {
   beforeEach(() => {
+    mockNavigate.mockClear();
     localStorage.clear();
     vi.spyOn(window, "alert").mockImplementation(() => {});
   });
@@ -20,8 +22,7 @@ describe("Pruebas Unitarias - Componente Login", () => {
   });
 
   it("renderiza los campos de entrada de correo y contraseña", () => {
-    renderConRouter(<Login />);
-
+    render(<Login />);
     expect(screen.getByPlaceholderText(/admin@duoc\.cl/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
@@ -29,7 +30,7 @@ describe("Pruebas Unitarias - Componente Login", () => {
 
   it("actualiza el valor escrito en el formulario", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Login />);
+    render(<Login />);
 
     const inputCorreo = screen.getByPlaceholderText(/admin@duoc\.cl/i);
     const inputPass = screen.getByPlaceholderText(/entre 4 y 10 caracteres/i);
@@ -43,7 +44,7 @@ describe("Pruebas Unitarias - Componente Login", () => {
 
   it("muestra alerta de error si la contraseña tiene menos de 4 caracteres", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Login />);
+    render(<Login />);
 
     await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "usuario@gmail.com");
     await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "12");
@@ -55,7 +56,7 @@ describe("Pruebas Unitarias - Componente Login", () => {
 
   it("guarda la sesión con rol 'Administrador' al autenticar con admin@duoc.cl", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Login />);
+    render(<Login />);
 
     await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "admin@duoc.cl");
     await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "12345");
@@ -69,7 +70,7 @@ describe("Pruebas Unitarias - Componente Login", () => {
 
   it("guarda la sesión con rol 'Cliente' cuando es un usuario general", async () => {
     const usuario = userEvent.setup();
-    renderConRouter(<Login />);
+    render(<Login />);
 
     await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "comprador@gmail.com");
     await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "claveSegura");
