@@ -1,4 +1,3 @@
-// src/pages/Carrito.jsx
 import { Link } from "react-router-dom";
 import { formatearPrecio } from "../utils/precio";
 import { calcularTotal } from "../utils/carrito";

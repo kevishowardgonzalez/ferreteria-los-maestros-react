@@ -1,12 +1,29 @@
+// src/utils/precio.spec.jsx
 import { describe, it, expect } from "vitest";
-import { formatearPrecio } from "./precio";
+import { formatearPrecio, calcularDescuento } from "./precio";
 
-describe("Pruebas Unitarias - Utilidad de Precios (Ferretería Los Maestros)", () => {
-    it("muestra productos con valor cero como 'Sin costo'", () => {
-        expect(formatearPrecio(0)).toBe("Sin costo");
-    });
+describe("1. Utilidades de Precio y Moneda", () => {
+  it("retorna 'Sin costo' si el precio es 0", () => {
+    expect(formatearPrecio(0)).toBe("Sin costo");
+  });
 
-    it("formatea el precio de un producto en pesos chilenos con separador de miles", () => {
-        expect(formatearPrecio(45990)).toContain("45.990");
-    });
+  it("retorna 'Sin costo' si se entrega un valor nulo o undefined", () => {
+    expect(formatearPrecio(null)).toBe("Sin costo");
+    expect(formatearPrecio(undefined)).toBe("Sin costo");
+  });
+
+  it("formatea números grandes con separador de miles en formato chileno", () => {
+    expect(formatearPrecio(59990)).toContain("59.990");
+    expect(formatearPrecio(1200500)).toContain("1.200.500");
+  });
+
+  it("aplica descuento porcentual correctamente redondeando al entero", () => {
+    // 10.000 con 15% de descuento = 8.500
+    expect(calcularDescuento(10000, 15)).toBe(8500);
+  });
+
+  it("devuelve el precio base si el porcentaje de descuento es 0 o negativo", () => {
+    expect(calcularDescuento(5000, 0)).toBe(5000);
+    expect(calcularDescuento(5000, -10)).toBe(5000);
+  });
 });
