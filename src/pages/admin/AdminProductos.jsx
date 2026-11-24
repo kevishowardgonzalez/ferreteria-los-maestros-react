@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import FormularioProducto from "./FormularioProducto";
+import { obtenerSesion } from "../../utils/persistencia";
 
 
 function AdminProductos({ productos, setProductos }) {
@@ -9,9 +10,7 @@ function AdminProductos({ productos, setProductos }) {
   const [busqueda, setBusqueda] = useState("");
   const [productoAEditar, setProductoAEditar] = useState(null);
 
-  const sesionGuardada = localStorage.getItem("usuario_sesion");
-  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
-  const esVendedor = usuario?.rol === "Vendedor";
+  const esVendedor = obtenerSesion()?.rol === "VENDEDOR";
 
   // AGREGAR O ACTUALIZAR (EDITAR)
   // AGREGAR O ACTUALIZAR PRODUCTO

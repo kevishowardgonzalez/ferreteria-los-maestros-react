@@ -1,8 +1,25 @@
 import { Link, useParams } from "react-router-dom";
 
-function DetalleProducto({ productos }) {
+function DetalleProducto({ productos, cargando = false, error = "" }) {
   // Obtener el ID del producto desde la URL
   const { id } = useParams();
+
+  if (cargando || error) {
+    return (
+      <main className="container py-4">
+        {cargando ? (
+          <p role="status">Cargando producto…</p>
+        ) : (
+          <>
+            <p className="alert alert-danger" role="alert">{error}</p>
+            <Link to="/productos" className="btn btn-secondary">
+              Volver al catálogo
+            </Link>
+          </>
+        )}
+      </main>
+    );
+  }
 
   // Buscar el producto en el estado compartido
   const producto = productos.find(

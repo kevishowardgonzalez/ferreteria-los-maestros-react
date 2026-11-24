@@ -1,31 +1,22 @@
 // src/components/Navegacion.jsx
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { Container, Nav, Navbar, Badge, Button } from "react-bootstrap";
-import { obtenerSesion, cerrarSesionStorage } from "../utils/persistencia";
+import { useSesion } from "./SesionProvider";
 
 // Tono amarillo/ocre oficial de Ferretería Los Maestros
 const COLOR_ACENTO = "#F2A93B";
 
 function Navegacion({ cantidadCarrito = 0 }) {
   const navigate = useNavigate();
-  const usuario = obtenerSesion();
+  const { usuario, cerrarSesion } = useSesion();
 
-  const esAdmin =
-    usuario &&
-    (usuario.rol === "Administrador" || usuario.correo?.includes("admin"));
+  const esAdmin = usuario?.rol === "ADMIN";
+  const esVendedor = usuario?.rol === "VENDEDOR";
+  const esCliente = usuario?.rol === "CLIENTE";
 
-  const esVendedor =
-    usuario &&
-    (usuario.rol === "Vendedor" ||
-      usuario.correo?.includes("vendedor") ||
-      usuario.correo?.includes("javier"));
-
-  const esCliente = usuario && usuario.rol === "Cliente";
-
-  function cerrarSesion() {
-    cerrarSesionStorage();
-    navigate("/");
-    window.location.reload();
+  function salir() {
+    cerrarSesion();
+    navigate("/", { replace: true });
   }
 
   // Estilo activo con el color amarillo exacto de la ferretería
@@ -63,7 +54,7 @@ function Navegacion({ cantidadCarrito = 0 }) {
                 Hola, <strong style={{ color: COLOR_ACENTO }}>{usuario.nombre || usuario.correo}</strong>
                 <button
                   type="button"
-                  onClick={cerrarSesion}
+                  onClick={salir}
                   className="btn btn-link text-danger text-decoration-none btn-sm p-0 ms-2 fw-semibold"
                 >
                   (Cerrar sesión)

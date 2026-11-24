@@ -12,15 +12,37 @@ export function obtenerCarrito() {
 
 // 2. Sesión de Usuario
 export function obtenerSesion() {
-  const sesion = localStorage.getItem("usuario_sesion");
-  return sesion ? JSON.parse(sesion) : null;
+  return obtenerSesionGuardada()?.usuario ?? null;
 }
 
-export function guardarSesion(usuario) {
-  localStorage.setItem("usuario_sesion", JSON.stringify(usuario));
+export function vencimientoToken(token) {
+  try {
+    const partes = token.split(".");
+    if (partes.length !== 3 || partes.some((parte) => !parte)) return 0;
+    const contenido = partes[1].replace(/-/g, "+").replace(/_/g, "/");
+    const { exp } = JSON.parse(atob(contenido));
+    return Number.isFinite(exp) ? exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function obtenerSesionGuardada() {
+  try {
+    const sesion = JSON.parse(sessionStorage.getItem("usuario_sesion"));
+    return sesion?.usuario && vencimientoToken(sesion.token) > Date.now() ? sesion : null;
+  } catch {
+    return null;
+  }
+}
+
+export function guardarSesion(sesion) {
+  sessionStorage.setItem("usuario_sesion", JSON.stringify(sesion));
+  localStorage.removeItem("usuario_sesion");
 }
 
 export function cerrarSesionStorage() {
+  sessionStorage.removeItem("usuario_sesion");
   localStorage.removeItem("usuario_sesion");
 }
 

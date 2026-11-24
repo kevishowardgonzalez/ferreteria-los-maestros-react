@@ -59,6 +59,24 @@ describe("DetalleProducto", () => {
     expect(screen.getByText("Producto no encontrado")).toBeInTheDocument();
   });
 
+  it("espera al catálogo cuando se abre el detalle directamente", () => {
+    mockId = "1";
+    const { rerender } = render(<DetalleProducto productos={[]} cargando />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando producto");
+
+    rerender(<DetalleProducto productos={inventario} />);
+    expect(screen.getByRole("heading", { name: "Taladro Percutor 20V" })).toBeInTheDocument();
+  });
+
+  it("muestra el error de carga del catálogo en el detalle", () => {
+    mockId = "1";
+    render(<DetalleProducto productos={[]} error="No se pudieron cargar los productos" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron cargar los productos");
+    expect(screen.queryByText("Producto no encontrado")).not.toBeInTheDocument();
+  });
+
   it("proporciona un botón para volver al catálogo cuando el producto no existe", () => {
     mockId = "999";
     render(<DetalleProducto productos={inventario} />);

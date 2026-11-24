@@ -2,11 +2,12 @@
 import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import { Form, Button } from "react-bootstrap";
+import { etiquetasRol, useSesion } from "../../components/SesionProvider";
 
 function AdminPerfil() {
-  const [nombre, setNombre] = useState("Kevis Howard González");
-  const [correo] = useState("admin@duoc.cl");
-  const [cargo, setCargo] = useState("Administrador General");
+  const { usuario } = useSesion();
+  const [nombre, setNombre] = useState(() => [usuario.nombre, usuario.apellido].filter(Boolean).join(" "));
+  const [cargo, setCargo] = useState(etiquetasRol[usuario.rol]);
 
   function guardar(e) {
     e.preventDefault();
@@ -31,7 +32,7 @@ function AdminPerfil() {
             </Form.Group>
             <Form.Group className="mb-3" controlId="perfilCorreo">
               <Form.Label>Correo</Form.Label>
-              <Form.Control type="email" value={correo} disabled />
+              <Form.Control type="email" value={usuario.correo} disabled />
             </Form.Group>
             <Form.Group className="mb-3" controlId="perfilCargo">
               <Form.Label>Cargo</Form.Label>

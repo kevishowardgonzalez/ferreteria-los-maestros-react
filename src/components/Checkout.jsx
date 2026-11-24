@@ -12,7 +12,7 @@ function Checkout({ carrito, onCompraExitosa }) {
 
   const [datos, setDatos] = useState({
     nombre: usuario?.nombre || "",
-    apellido: "",
+    apellido: usuario?.apellido || "",
     correo: usuario?.correo || "",
     calle: "Av. Balmaceda",
     numero: "1234",

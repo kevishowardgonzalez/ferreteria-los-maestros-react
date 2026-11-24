@@ -1,15 +1,17 @@
 // src/pages/admin/MenuAdmin.jsx
 import { NavLink, Link, useNavigate } from "react-router-dom";
+import { etiquetasRol, useSesion } from "../../components/SesionProvider";
+import { cerrarSesionStorage, obtenerSesion } from "../../utils/persistencia";
 
 function MenuAdmin() {
   const navigate = useNavigate();
-  const sesionGuardada = localStorage.getItem("usuario_sesion");
-  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
-  const esVendedor = usuario?.rol === "Vendedor";
+  const sesion = useSesion();
+  const usuario = sesion?.usuario ?? obtenerSesion();
+  const esVendedor = usuario?.rol === "VENDEDOR";
 
   function cerrarSesion() {
-    localStorage.removeItem("usuario_sesion");
-    navigate("/login");
+    (sesion?.cerrarSesion ?? cerrarSesionStorage)();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -20,7 +22,7 @@ function MenuAdmin() {
       <div className="border-bottom pb-3 mb-3">
         <h2 className="h5 fw-bold text-dark mb-0">🔨 Los Maestros</h2>
         <span className="badge bg-primary mt-1">
-          {esVendedor ? "Rol: Vendedor" : "Rol: Administrador"}
+          Rol: {etiquetasRol[usuario?.rol ?? "ADMIN"]}
         </span>
       </div>
 

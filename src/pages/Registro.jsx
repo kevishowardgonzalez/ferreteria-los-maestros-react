@@ -1,43 +1,45 @@
 // src/pages/Registro.jsx
 import { useState } from "react";
-import { Form, Button, Card } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { guardarSesion } from "../utils/persistencia";
+import { Alert, Form, Button, Card } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
+import { registrarCliente } from "../services/authService";
+import { useSesion } from "../components/SesionProvider";
 
 function Registro() {
   const [datos, setDatos] = useState({
+    run: "",
     nombre: "",
     apellido: "",
     correo: "",
     password: ""
   });
 
-  function manejarRegistro(e) {
+  const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const { activarSesion } = useSesion();
+  const navigate = useNavigate();
+
+  async function manejarRegistro(e) {
     e.preventDefault();
+    if (enviando) return;
 
-    // 1. Objeto con rol explícito de Cliente y nombre concatenado
-    const nuevoCliente = {
-      nombre: `${datos.nombre} ${datos.apellido}`.trim(),
-      correo: datos.correo.trim().toLowerCase(),
-      rol: "Cliente", // ASIGNACIÓN OBLIGATORIA DEL ROL CLIENTE
-      estado: "Activo"
-    };
-
-    // 2. Guardar sesión usando la función centralizada de persistencia
-    guardarSesion(nuevoCliente);
-
-    // 3. Registrar también en la lista general de usuarios del sistema
-    const guardados = localStorage.getItem("usuarios_sistema");
-    const listaUsuarios = guardados ? JSON.parse(guardados) : [];
-    localStorage.setItem(
-      "usuarios_sistema",
-      JSON.stringify([...listaUsuarios, { id: Date.now(), ...nuevoCliente }])
-    );
-
-    alert("Cuenta creada con éxito. Bienvenido a Los Maestros.");
-
-    // 4. Redirección con recarga limpia para actualizar la barra de navegación
-    window.location.href = "/";
+    setError("");
+    setEnviando(true);
+    try {
+      const respuesta = await registrarCliente({
+        run: datos.run.trim(),
+        nombre: datos.nombre.trim(),
+        apellido: datos.apellido.trim(),
+        correo: datos.correo.trim().toLowerCase(),
+        password: datos.password,
+      });
+      activarSesion(respuesta);
+      navigate("/", { replace: true });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -49,6 +51,17 @@ function Registro() {
         </p>
 
         <Form onSubmit={manejarRegistro}>
+          {error && <Alert variant="danger">{error}</Alert>}
+
+          <Form.Group className="mb-3" controlId="regRun">
+            <Form.Label>RUN</Form.Label>
+            <Form.Control
+              type="text"
+              required
+              value={datos.run}
+              onChange={(e) => setDatos({ ...datos, run: e.target.value })}
+            />
+          </Form.Group>
           <Form.Group className="mb-3" controlId="regNombre">
             <Form.Label>Nombre</Form.Label>
             <Form.Control
@@ -84,6 +97,7 @@ function Registro() {
             <Form.Label>Contraseña</Form.Label>
             <Form.Control
               type="password"
+              autoComplete="new-password"
               minLength={4}
               maxLength={10}
               required
@@ -92,8 +106,8 @@ function Registro() {
             />
           </Form.Group>
 
-          <Button variant="warning" type="submit" className="w-100 fw-bold">
-            Registrarse
+          <Button variant="warning" type="submit" className="w-100 fw-bold" disabled={enviando}>
+            {enviando ? "Registrando…" : "Registrarse"}
           </Button>
         </Form>
 

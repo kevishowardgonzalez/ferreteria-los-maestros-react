@@ -1,9 +1,11 @@
 // src/App.jsx
 import { Routes, Route, Link, Outlet } from "react-router-dom";
-import { Form, Button } from "react-bootstrap";
+import { Alert, Form, Button } from "react-bootstrap";
 
 // 1. Custom Hooks de lógica desacoplada
 import { useProductos } from "./hooks/useProductos";
+import SesionProvider from "./components/SesionProvider";
+import RutaProtegida from "./components/RutaProtegida";
 import { useCarrito } from "./hooks/useCarrito";
 
 // 2. Componentes estructurales y de tienda (en ./components/)
@@ -64,9 +66,13 @@ function App() {
   const {
     productos,
     setProductos,
+    categorias,
     categoria,
     setCategoria,
     visibles,
+    cargando,
+    error,
+    errorCategorias,
   } = useProductos();
 
   // Estado y funciones del carrito gestionados por el Hook
@@ -115,22 +121,29 @@ function App() {
                     aria-label="Filtrar por categoría"
                   >
                     <option value="Todas">Todas las categorías</option>
-                    <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-                    <option value="Construcción">Construcción</option>
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Gasfitería">Gasfitería</option>
-                    <option value="Pinturas">Pinturas</option>
-                    <option value="Electricidad">Electricidad</option>
+                    {categorias.map(({ id, nombre }) => (
+                      <option key={id} value={nombre}>{nombre}</option>
+                    ))}
                   </Form.Select>
                 </div>
               </div>
-              <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
+              {errorCategorias && <Alert variant="warning">{errorCategorias}</Alert>}
+              {cargando && <p role="status">Cargando productos…</p>}
+              {error && <Alert variant="danger">{error}</Alert>}
+              {!cargando && !error && (
+                visibles.length > 0
+                  ? <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
+                  : <p className="text-muted">No hay productos para mostrar.</p>
+              )}
             </main>
           }
         />
 
         {/* Detalle dinámico de producto */}
-        <Route path="/productos/:id" element={<DetalleProducto productos={productos} />} />
+        <Route
+          path="/productos/:id"
+          element={<DetalleProducto productos={productos} cargando={cargando} error={error} />}
+        />
 
         {/* Flujo de compras */}
         <Route
@@ -161,30 +174,42 @@ function App() {
         <Route path="/registro" element={<Registro />} />
 
         {/* Vistas de cliente */}
-        <Route path="/cliente/compras" element={<MisCompras />} />
-        <Route path="/cliente/perfil" element={<PerfilCliente />} />
+        <Route element={<RutaProtegida rol="CLIENTE" />}>
+          <Route path="/cliente/compras" element={<MisCompras />} />
+          <Route path="/cliente/perfil" element={<PerfilCliente />} />
+        </Route>
 
         {/* 404 */}
         <Route path="*" element={<NoEncontrada />} />
       </Route>
 
       {/* ---------------- 2. PANEL ADMINISTRATIVO ---------------- */}
-      <Route path="/admin" element={<HomeAdmin />} />
-      <Route
-        path="/admin/productos"
-        element={<AdminProductos productos={productos} setProductos={setProductos} />}
-      />
-      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-      <Route path="/admin/categorias" element={<AdminCategorias />} />
-      <Route path="/admin/ordenes" element={<AdminOrdenes />} />
-      <Route path="/admin/reportes" element={<AdminReportes />} />
-      <Route path="/admin/perfil" element={<AdminPerfil />} />
+      <Route element={<RutaProtegida rol="ADMIN" />}>
+        <Route path="/admin" element={<HomeAdmin />} />
+        <Route
+          path="/admin/productos"
+          element={<AdminProductos productos={productos} setProductos={setProductos} />}
+        />
+        <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+        <Route path="/admin/categorias" element={<AdminCategorias />} />
+        <Route path="/admin/ordenes" element={<AdminOrdenes />} />
+        <Route path="/admin/reportes" element={<AdminReportes />} />
+        <Route path="/admin/perfil" element={<AdminPerfil />} />
+      </Route>
 
       {/* ---------------- 3. PANEL DE VENDEDOR ---------------- */}
-      <Route path="/vendedor/productos" element={<VendedorProductos />} />
-      <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
+      <Route element={<RutaProtegida rol="VENDEDOR" />}>
+        <Route path="/vendedor/productos" element={<VendedorProductos />} />
+        <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
+      </Route>
     </Routes>
   );
 }
 
-export default App;
+export default function AppConSesion() {
+  return (
+    <SesionProvider>
+      <App />
+    </SesionProvider>
+  );
+}

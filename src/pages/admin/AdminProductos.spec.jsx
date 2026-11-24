@@ -1,3 +1,4 @@
+import { tokenDePrueba } from "../../test/sesion";
 // src/pages/admin/AdminProductos.spec.jsx
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -56,6 +57,7 @@ describe("AdminProductos", () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     window.scrollTo = vi.fn();
   });
 
@@ -250,7 +252,7 @@ describe("AdminProductos", () => {
   });
 
   it("oculta los controles de edición y eliminación si el usuario tiene rol 'Vendedor'", () => {
-    localStorage.setItem("usuario_sesion", JSON.stringify({ rol: "Vendedor" }));
+    sessionStorage.setItem("usuario_sesion", JSON.stringify({ token: tokenDePrueba(), usuario: { rol: "VENDEDOR" } }));
     render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
 
     expect(screen.queryByTitle("Editar producto")).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { tokenDePrueba } from "../test/sesion";
 // src/utils/persistencia.spec.js
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
@@ -15,6 +16,7 @@ import {
 describe("persistencia.js", () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -32,8 +34,8 @@ describe("persistencia.js", () => {
   });
 
   it("maneja el almacenamiento y recuperación de la sesión de usuario", () => {
-    const usuario = { correo: "admin@duoc.cl", rol: "Administrador" };
-    guardarSesion(usuario);
+    const usuario = { correo: "cuenta@ejemplo.cl", rol: "ADMIN" };
+    guardarSesion({ token: tokenDePrueba(), usuario });
     expect(obtenerSesion()).toEqual(usuario);
 
     cerrarSesionStorage();

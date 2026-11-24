@@ -2,13 +2,11 @@
 import { useState } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useSesion } from "../../components/SesionProvider";
 
 function PerfilCliente() {
-  const sesion = localStorage.getItem("usuario_sesion");
-  const usuario = sesion ? JSON.parse(sesion) : null;
-
-  const [nombre, setNombre] = useState(usuario?.nombre || "Yerickson Maestro");
-  const [correo] = useState(usuario?.correo || "yerickson@gmail.com");
+  const { usuario, actualizarNombre } = useSesion();
+  const [nombre, setNombre] = useState(() => [usuario.nombre, usuario.apellido].filter(Boolean).join(" "));
   const [telefono, setTelefono] = useState("+56 9 8765 4321");
   const [direccion, setDireccion] = useState("Av. Balmaceda 1234, Depto 402");
   const [comuna, setComuna] = useState("La Serena");
@@ -16,8 +14,7 @@ function PerfilCliente() {
 
   function guardarPerfil(e) {
     e.preventDefault();
-    const actualizado = { ...usuario, nombre };
-    localStorage.setItem("usuario_sesion", JSON.stringify(actualizado));
+    actualizarNombre(nombre);
     setMensaje("Tus datos personales y de envío han sido actualizados con éxito.");
   }
 
@@ -49,7 +46,7 @@ function PerfilCliente() {
 
           <Form.Group className="mb-3" controlId="perfilClienteCorreo">
             <Form.Label>Correo Electrónico</Form.Label>
-            <Form.Control type="email" value={correo} disabled />
+            <Form.Control type="email" value={usuario.correo} disabled />
             <Form.Text className="text-muted">El correo de la cuenta no se puede modificar.</Form.Text>
           </Form.Group>
 
