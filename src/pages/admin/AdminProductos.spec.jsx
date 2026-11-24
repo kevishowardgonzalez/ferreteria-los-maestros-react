@@ -1,225 +1,261 @@
-
-import { useState } from "react";
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach
-} from "vitest";
-
-import {
-  render,
-  screen,
-  within
-} from "@testing-library/react";
-
+// src/pages/admin/AdminProductos.spec.jsx
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminProductos from "./AdminProductos";
 
-// Simulamos el menú administrativo para aislar las pruebas
-vi.mock("./MenuAdmin", () => ({
-  default: () => <nav>Menú administrativo simulado</nav>
+// Mock canónico de react-router-dom según Guía 14
+vi.mock("react-router-dom", () => ({
+  Link: ({ children, to, className, title }) => (
+    <a href={to} className={className} title={title}>{children}</a>
+  ),
+  NavLink: ({ children, to, className }) => (
+    <a href={to} className={typeof className === "function" ? className({ isActive: false }) : className}>
+      {children}
+    </a>
+  ),
+  useNavigate: () => vi.fn(),
 }));
 
-// Productos utilizados en las pruebas
-const productosPrueba = [
-  {
-    id: 1,
-    nombre: "Martillo de prueba",
-    categoria: "Herramientas Manuales",
-    descripcion: "Martillo de acero",
-    precio: 9990,
-    stock: 15
-  },
-  {
-    id: 2,
-    nombre: "Taladro de prueba",
-    categoria: "Herramientas Eléctricas",
-    descripcion: "Taladro eléctrico",
-    precio: 59990,
-    stock: 8
-  }
-];
+// Mock del FormularioProducto para invocar onGuardar y onCancelarEdicion directamente
+vi.mock("./FormularioProducto", () => ({
+  default: ({ onGuardar, productoAEditar, onCancelarEdicion }) => (
+    <div data-testid="formulario-mock">
+      <button
+        type="button"
+        onClick={() =>
+          onGuardar(
+            productoAEditar || {
+              id: 99,
+              nombre: "Huincha Nueva 5M",
+              categoria: "Herramientas Manuales",
+              precio: 3990,
+              stock: 10,
+              descripcion: "Cinta métrica",
+            }
+          )
+        }
+      >
+        {productoAEditar ? "Actualizar Producto" : "Guardar Producto"}
+      </button>
+      {productoAEditar && (
+        <button type="button" onClick={onCancelarEdicion}>
+          Cancelar
+        </button>
+      )}
+    </div>
+  ),
+}));
 
-describe("Administración de productos", () => {
+describe("AdminProductos", () => {
+  const productosPrueba = [
+    { id: 1, nombre: "Martillo Galponero", categoria: "Herramientas Manuales", precio: 9990, stock: 12, descripcion: "Mango de fibra" },
+    { id: 2, nombre: "Taladro Percutor 20V", categoria: "Herramientas Eléctricas", precio: 59990, stock: 3 },
+    { id: 3, nombre: "Sierra Circular", categoria: "Herramientas Eléctricas", precio: 68990, stock: 2, descripcion: "Corte madera" },
+  ];
 
-  // Preparación antes de cada prueba
   beforeEach(() => {
-    localStorage.removeItem("usuario_sesion");
+    localStorage.clear();
+    window.scrollTo = vi.fn();
   });
 
-  // Restaurar los mocks después de cada prueba
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("renderiza la tabla con los productos entregados", () => {
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(screen.getByText("Taladro Percutor 20V")).toBeInTheDocument();
   });
 
-  // ==========================================
-  // PRUEBA 34: FILTRAR PRODUCTOS POR NOMBRE
-  // ==========================================
+  it("calcula y exhibe la cantidad de artículos con stock crítico (stock <= 5)", () => {
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+    const badgeCritico = screen.getAllByText("Crítico");
+    expect(badgeCritico).toHaveLength(2);
+  });
 
-  it("filtra productos por nombre", async () => {
+  it("filtra productos en la tabla al escribir en el buscador por nombre", async () => {
     const usuario = userEvent.setup();
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
 
-    render(
-      <AdminProductos
-        productos={productosPrueba}
-        setProductos={vi.fn()}
-      />
-    );
+    const inputBuscador = screen.getByPlaceholderText(/buscar por nombre/i);
+    await usuario.type(inputBuscador, "Martillo");
 
-    const tabla = within(screen.getByRole("table"));
-
-    // Comprobar que inicialmente aparecen ambos productos
-    expect(
-      tabla.getByText("Martillo de prueba")
-    ).toBeInTheDocument();
-
-    expect(
-      tabla.getByText("Taladro de prueba")
-    ).toBeInTheDocument();
-
-    // Buscar el campo de búsqueda
-    const buscador = screen.getByPlaceholderText(
-      /Buscar por nombre o categoría/i
-    );
-
-    // Simular que el usuario escribe
-    await usuario.type(buscador, "Martillo");
-
-    // El martillo debe permanecer visible
-    expect(
-      tabla.getByText("Martillo de prueba")
-    ).toBeInTheDocument();
-
-    // El taladro debe desaparecer de los resultados
-    expect(
-      tabla.queryByText("Taladro de prueba")
-    ).not.toBeInTheDocument();
+    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(screen.queryByText("Taladro Percutor 20V")).not.toBeInTheDocument();
   });
 
-  // ==========================================
-  // PRUEBA 35: CONFIRMAR ELIMINACIÓN
-  // ==========================================
-
-  it("elimina un producto cuando el administrador confirma", async () => {
+  it("filtra productos por categoría al escribir el nombre de la categoría", async () => {
     const usuario = userEvent.setup();
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
 
-    // Simular que el administrador presiona Aceptar
-    const confirmar = vi
-      .spyOn(window, "confirm")
-      .mockReturnValue(true);
+    const inputBuscador = screen.getByPlaceholderText(/buscar por nombre/i);
+    await usuario.type(inputBuscador, "Manuales");
 
-    // Componente auxiliar con estado real
-    function AdministracionDePrueba() {
-      const [productos, setProductos] = useState(productosPrueba);
+    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(screen.queryByText("Sierra Circular")).not.toBeInTheDocument();
+  });
 
-      return (
-        <AdminProductos
-          productos={productos}
-          setProductos={setProductos}
-        />
-      );
+  it("muestra mensaje de búsqueda sin resultados", async () => {
+    const usuario = userEvent.setup();
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+
+    const inputBuscador = screen.getByPlaceholderText(/buscar por nombre/i);
+    await usuario.type(inputBuscador, "ArticuloInexistenteXYZ");
+
+    expect(screen.getByText(/no se encontraron productos coincidentes/i)).toBeInTheDocument();
+  });
+
+  it("elimina un producto si el usuario confirma el diálogo", async () => {
+    const usuario = userEvent.setup();
+    const setProductosMock = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<AdminProductos productos={productosPrueba} setProductos={setProductosMock} />);
+
+    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    await usuario.click(botonesEliminar[0]);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(setProductosMock).toHaveBeenCalled();
+  });
+
+  it("cancela la eliminación si el usuario presiona Cancelar", async () => {
+    const usuario = userEvent.setup();
+    const setProductosMock = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(<AdminProductos productos={productosPrueba} setProductos={setProductosMock} />);
+
+    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    await usuario.click(botonesEliminar[0]);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(setProductosMock).not.toHaveBeenCalled();
+  });
+
+  it("muestra la ficha técnica cubriendo con y sin descripción adicional (Línea 54)", async () => {
+    const usuario = userEvent.setup();
+    const alertMock = vi.spyOn(window, "alert").mockImplementation(() => { });
+
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+
+    const botonesDetalle = screen.getAllByTitle("Consultar ficha");
+
+    // 1. Con descripción (id 1)
+    await usuario.click(botonesDetalle[0]);
+    expect(alertMock).toHaveBeenCalledWith(expect.stringContaining("Mango de fibra"));
+
+    // 2. Sin descripción (id 2) -> cubre prod.descripcion || "Sin descripción adicional"
+    await usuario.click(botonesDetalle[1]);
+    expect(alertMock).toHaveBeenCalledWith(expect.stringContaining("Sin descripción adicional"));
+  });
+
+  it("carga los datos en el formulario al pulsar Editar y cancela la edición", async () => {
+    const usuario = userEvent.setup();
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+
+    const botonesEditar = screen.getAllByTitle("Editar producto");
+    await usuario.click(botonesEditar[0]);
+
+    expect(screen.getByText("Editar Producto: Martillo Galponero")).toBeInTheDocument();
+
+    const botonCancelar = screen.getByRole("button", { name: /cancelar/i });
+    await usuario.click(botonCancelar);
+
+    expect(screen.queryByText("Editar Producto: Martillo Galponero")).not.toBeInTheDocument();
+  });
+
+  it("actualiza un producto existente y permite cerrar la alerta de éxito", async () => {
+    const usuario = userEvent.setup();
+    let callbackActualizador;
+    const setProductosMock = vi.fn((cb) => {
+      if (typeof cb === "function") callbackActualizador = cb;
+    });
+
+    render(<AdminProductos productos={productosPrueba} setProductos={setProductosMock} />);
+
+    // Iniciar edición
+    const botonesEditar = screen.getAllByTitle("Editar producto");
+    await usuario.click(botonesEditar[0]);
+
+    // Guardar actualización
+    const botonActualizar = screen.getByRole("button", { name: /actualizar producto/i });
+    await usuario.click(botonActualizar);
+
+    expect(setProductosMock).toHaveBeenCalled();
+
+    if (callbackActualizador) {
+      const listaActualizada = callbackActualizador(productosPrueba);
+      expect(listaActualizada).toHaveLength(3);
     }
 
-    render(<AdministracionDePrueba />);
+    // Cerrar la alerta
+    const alerta = screen.getByText(/actualizado con éxito/i);
+    expect(alerta).toBeInTheDocument();
 
-    const tabla = within(screen.getByRole("table"));
-
-    // Comprobar los productos iniciales
-    expect(
-      tabla.getByText("Martillo de prueba")
-    ).toBeInTheDocument();
-
-    expect(
-      tabla.getByText("Taladro de prueba")
-    ).toBeInTheDocument();
-
-    // Encontrar la fila del martillo
-    const filaMartillo = tabla
-      .getByText("Martillo de prueba")
-      .closest("tr");
-
-    // Presionar el botón Eliminar
-    await usuario.click(
-      within(filaMartillo).getByTitle("Eliminar producto")
-    );
-
-    // Comprobar que se solicitó confirmación
-    expect(confirmar).toHaveBeenCalledOnce();
-
-    // El martillo debe desaparecer
-    expect(
-      tabla.queryByText("Martillo de prueba")
-    ).not.toBeInTheDocument();
-
-    // El taladro debe permanecer
-    expect(
-      tabla.getByText("Taladro de prueba")
-    ).toBeInTheDocument();
-
-    // Mostrar confirmación de eliminación exitosa
-    expect(
-      screen.getByText("Producto eliminado correctamente.")
-    ).toBeInTheDocument();
+    const botonCerrarAlerta = screen.getByLabelText("Cerrar");
+    await usuario.click(botonCerrarAlerta);
+    expect(screen.queryByText(/actualizado con éxito/i)).not.toBeInTheDocument();
   });
 
-  // ==========================================
-  // PRUEBA 36: CANCELAR ELIMINACIÓN
-  // ==========================================
-
-  it("mantiene el producto cuando se cancela la eliminación", async () => {
+  it("registra un producto nuevo cuando no se está editando (Líneas 23-24)", async () => {
     const usuario = userEvent.setup();
+    let callbackActualizador;
+    const setProductosMock = vi.fn((cb) => {
+      if (typeof cb === "function") callbackActualizador = cb;
+    });
 
-    // Simular que el administrador presiona Cancelar
-    const confirmar = vi
-      .spyOn(window, "confirm")
-      .mockReturnValue(false);
+    render(<AdminProductos productos={productosPrueba} setProductos={setProductosMock} />);
 
-    // Componente auxiliar con estado real
-    function AdministracionDePrueba() {
-      const [productos, setProductos] = useState(productosPrueba);
+    // El botón del formulario muestra "Guardar Producto" cuando productoAEditar es null
+    const botonGuardar = screen.getByRole("button", { name: /guardar producto/i });
+    await usuario.click(botonGuardar);
 
-      return (
-        <AdminProductos
-          productos={productos}
-          setProductos={setProductos}
-        />
-      );
+    expect(setProductosMock).toHaveBeenCalled();
+
+    // Ejecuta la rama funcional de las líneas 23-24: anteriores => [...anteriores, producto]
+    if (callbackActualizador) {
+      const listaNueva = callbackActualizador(productosPrueba);
+      expect(listaNueva).toHaveLength(4);
+      expect(listaNueva[3].nombre).toBe("Huincha Nueva 5M");
     }
 
-    render(<AdministracionDePrueba />);
-
-    const tabla = within(screen.getByRole("table"));
-
-    // Encontrar la fila del martillo
-    const filaMartillo = tabla
-      .getByText("Martillo de prueba")
-      .closest("tr");
-
-    // Intentar eliminar el producto
-    await usuario.click(
-      within(filaMartillo).getByTitle("Eliminar producto")
-    );
-
-    // Comprobar que se solicitó confirmación
-    expect(confirmar).toHaveBeenCalledOnce();
-
-    // El martillo debe seguir en el inventario
-    expect(
-      tabla.getByText("Martillo de prueba")
-    ).toBeInTheDocument();
-
-    // El taladro también debe permanecer
-    expect(
-      tabla.getByText("Taladro de prueba")
-    ).toBeInTheDocument();
-
-    // No debe aparecer el mensaje de eliminación
-    expect(
-      screen.queryByText("Producto eliminado correctamente.")
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(/registrado con éxito/i)).toBeInTheDocument();
   });
 
+  it("elimina el producto que estaba seleccionado en edición y limpia el formulario", async () => {
+    const usuario = userEvent.setup();
+    let callbackActualizador;
+    const setProductosMock = vi.fn((cb) => {
+      if (typeof cb === "function") callbackActualizador = cb;
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<AdminProductos productos={productosPrueba} setProductos={setProductosMock} />);
+
+    // Modo edición
+    const botonesEditar = screen.getAllByTitle("Editar producto");
+    await usuario.click(botonesEditar[0]);
+    expect(screen.getByText("Editar Producto: Martillo Galponero")).toBeInTheDocument();
+
+    // Eliminar el mismo producto activo
+    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    await usuario.click(botonesEliminar[0]);
+
+    if (callbackActualizador) {
+      const listaTrasEliminar = callbackActualizador(productosPrueba);
+      expect(listaTrasEliminar).toHaveLength(2);
+    }
+
+    expect(screen.queryByText("Editar Producto: Martillo Galponero")).not.toBeInTheDocument();
+    expect(screen.getByText("Producto eliminado correctamente.")).toBeInTheDocument();
+  });
+
+  it("oculta los controles de edición y eliminación si el usuario tiene rol 'Vendedor'", () => {
+    localStorage.setItem("usuario_sesion", JSON.stringify({ rol: "Vendedor" }));
+    render(<AdminProductos productos={productosPrueba} setProductos={() => { }} />);
+
+    expect(screen.queryByTitle("Editar producto")).not.toBeInTheDocument();
+    const badgesSoloLectura = screen.getAllByText("Solo lectura");
+    expect(badgesSoloLectura.length).toBeGreaterThan(0);
+    expect(screen.getByText("Vista de consulta para equipo de ventas.")).toBeInTheDocument();
+  });
 });

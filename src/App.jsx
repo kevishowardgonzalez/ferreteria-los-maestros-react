@@ -1,16 +1,24 @@
 // src/App.jsx
-import { useState, useEffect } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Outlet } from "react-router-dom";
+import { Form, Button } from "react-bootstrap";
 
+// 1. Custom Hooks de lógica desacoplada
+import { useProductos } from "./hooks/useProductos";
+import { useCarrito } from "./hooks/useCarrito";
+
+// 2. Componentes estructurales y de tienda (en ./components/)
 import Cabecera from "./components/Cabecera";
 import Navegacion from "./components/Navegacion";
 import PiePagina from "./components/PiePagina";
 import Bienvenida from "./components/Bienvenida";
+import Catalogo from "./components/Catalogo";
+import Carrito from "./components/Carrito";
+import Checkout from "./components/Checkout";
+import CompraExitosa from "./components/CompraExitosa";
+import CompraFallida from "./components/CompraFallida";
+import DetalleProducto from "./components/DetalleProducto";
 
-import Catalogo from "./pages/Catalogo";
-import DetalleProducto from "./pages/DetalleProducto";
-import Carrito from "./pages/Carrito";
-import Checkout from "./pages/Checkout";
+// 3. Páginas públicas (en ./pages/)
 import NoEncontrada from "./pages/NoEncontrada";
 import Nosotros from "./pages/Nosotros";
 import Blogs from "./pages/Blogs";
@@ -20,7 +28,7 @@ import Registro from "./pages/Registro";
 import DetalleBlog1 from "./pages/DetalleBlog1";
 import DetalleBlog2 from "./pages/DetalleBlog2";
 
-// Subsistema administrativo
+// 4. Subsistema administrativo
 import HomeAdmin from "./pages/admin/HomeAdmin";
 import AdminProductos from "./pages/admin/AdminProductos";
 import AdminCategorias from "./pages/admin/AdminCategorias";
@@ -29,295 +37,142 @@ import AdminOrdenes from "./pages/admin/AdminOrdenes";
 import AdminReportes from "./pages/admin/AdminReportes";
 import AdminPerfil from "./pages/admin/AdminPerfil";
 
-// Vendedor
+// 5. Subsistema vendedor
 import VendedorProductos from "./pages/vendedor/VendedorProductos";
 import VendedorOrdenes from "./pages/vendedor/VendedorOrdenes";
 
-// Cliente
+// 6. Subsistema cliente
 import MisCompras from "./pages/cliente/MisCompras";
 import PerfilCliente from "./pages/cliente/PerfilCliente";
 
-import { productos as listaInicial } from "./data/productos";
-import { guardarCarrito, obtenerProductos, guardarProductos } from "./utils/persistencia";
-import { Form, Button } from "react-bootstrap";
+// Layout común para la tienda pública (evita repetir cabecera/navbar 15 veces)
+function LayoutTienda({ cantidadCarrito }) {
+  return (
+    <div className="bg-light min-vh-100 d-flex flex-column">
+      <Cabecera />
+      <Navegacion cantidadCarrito={cantidadCarrito} />
+      <div className="flex-grow-1">
+        <Outlet />
+      </div>
+      <PiePagina />
+    </div>
+  );
+}
 
 function App() {
-  const [productos, setProductos] = useState(
-    () => obtenerProductos(listaInicial)
-  );
-  const [categoria, setCategoria] = useState("Todas");
-  useEffect(() => {
-    guardarProductos(productos);
-  }, [productos]);
-  const [carrito, setCarrito] = useState(() => {
-    const guardados = localStorage.getItem("carrito_los_maestros");
-    return guardados ? JSON.parse(guardados) : [];
-  });
+  // Estado y filtros de inventario gestionados por el Hook
+  const {
+    productos,
+    setProductos,
+    categoria,
+    setCategoria,
+    visibles,
+  } = useProductos();
 
-  useEffect(() => {
-    guardarCarrito(carrito);
-  }, [carrito]);
-
-  const visibles =
-    categoria === "Todas"
-      ? productos
-      : productos.filter((prod) => prod.categoria === categoria);
-
-  function agregarAlCarrito(producto) {
-    const itemExistente = carrito.find((item) => item.id === producto.id);
-    if (itemExistente) {
-      if (itemExistente.cantidad < producto.stock) {
-        cambiarCantidad(producto.id, itemExistente.cantidad + 1);
-      } else {
-        alert("No hay más stock disponible de este producto.");
-      }
-      return;
-    }
-    setCarrito([...carrito, { ...producto, cantidad: 1 }]);
-  }
-
-  function cambiarCantidad(id, nuevaCantidad) {
-    setCarrito(
-      carrito.map((item) =>
-        item.id === id ? { ...item, cantidad: nuevaCantidad } : item
-      )
-    );
-  }
-
-  function eliminarDelCarrito(id) {
-    setCarrito(carrito.filter((item) => item.id !== id));
-  }
-
-  function vaciarCarrito() {
-    setCarrito([]);
-  }
-
-  const cantidadTotalCarrito = carrito.reduce(
-    (acc, item) => acc + item.cantidad,
-    0
-  );
-
-  // 1. Portada
-  const vistaInicio = (
-    <main className="container py-4 text-center">
-      <Bienvenida />
-      <div className="mt-4">
-        <Button as={Link} to="/productos" variant="warning" size="lg" className="fw-bold">
-          Ver Catálogo Completo de Productos
-        </Button>
-      </div>
-    </main>
-  );
-
-  // 2. Catálogo con filtro
-  const vistaCatalogo = (
-    <main className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
-        <div>
-          <h1 className="h3 fw-bold mb-1">Catálogo de Materiales y Herramientas</h1>
-          <p className="text-muted mb-0">Explora nuestro stock para faenas y obras en La Serena.</p>
-        </div>
-        <div style={{ minWidth: "220px" }}>
-          <Form.Select
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            aria-label="Filtrar por categoría"
-          >
-            <option value="Todas">Todas las categorías</option>
-            <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-            <option value="Construcción">Construcción</option>
-            <option value="Herramientas Manuales">Herramientas Manuales</option>
-            <option value="Gasfitería">Gasfitería</option>
-            <option value="Pinturas">Pinturas</option>
-            <option value="Electricidad">Electricidad</option>
-          </Form.Select>
-        </div>
-      </div>
-      <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
-    </main>
-  );
+  // Estado y funciones del carrito gestionados por el Hook
+  const {
+    carrito,
+    cantidadTotalCarrito,
+    agregarAlCarrito,
+    cambiarCantidad,
+    eliminarDelCarrito,
+    vaciarCarrito,
+  } = useCarrito();
 
   return (
     <Routes>
-      {/* VISTAS DE LA TIENDA PÚBLICA (Con cabecera y barra de navegación) */}
-      <Route
-        path="/"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1">{vistaInicio}</div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/productos"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1">{vistaCatalogo}</div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/productos/:id"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1">
-             <DetalleProducto productos={productos} />
-            </div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/carrito"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1">
-              <Carrito
-                carrito={carrito}
-                onCambiarCantidad={cambiarCantidad}
-                onEliminar={eliminarDelCarrito}
-                onVaciar={vaciarCarrito}
-              />
-            </div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/checkout"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1">
-              <Checkout carrito={carrito} onCompraExitosa={vaciarCarrito} />
-            </div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/nosotros"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><Nosotros /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/blogs"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><Blogs /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/blogs/1"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><DetalleBlog1 /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/blogs/2"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><DetalleBlog2 /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/contacto"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><Contacto /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><Login /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/registro"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><Registro /></div>
-            <PiePagina />
-          </div>
-        }
-      />
+      {/* ---------------- 1. RUTAS DE LA TIENDA PÚBLICA ---------------- */}
+      <Route element={<LayoutTienda cantidadCarrito={cantidadTotalCarrito} />}>
+        {/* Portada */}
+        <Route
+          path="/"
+          element={
+            <main className="container py-4 text-center">
+              <Bienvenida />
+              <div className="mt-4">
+                <Button as={Link} to="/productos" variant="warning" size="lg" className="fw-bold">
+                  Ver Catálogo Completo de Productos
+                </Button>
+              </div>
+            </main>
+          }
+        />
 
-      {/* VISTAS EXCLUSIVAS DE CLIENTE */}
-      <Route
-        path="/cliente/compras"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><MisCompras /></div>
-            <PiePagina />
-          </div>
-        }
-      />
-      <Route
-        path="/cliente/perfil"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><PerfilCliente /></div>
-            <PiePagina />
-          </div>
-        }
-      />
+        {/* Catálogo con selector de categoría */}
+        <Route
+          path="/productos"
+          element={
+            <main className="container py-4">
+              <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
+                <div>
+                  <h1 className="h3 fw-bold mb-1">Catálogo de Materiales y Herramientas</h1>
+                  <p className="text-muted mb-0">Explora nuestro stock para faenas y obras en La Serena.</p>
+                </div>
+                <div style={{ minWidth: "220px" }}>
+                  <Form.Select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    aria-label="Filtrar por categoría"
+                  >
+                    <option value="Todas">Todas las categorías</option>
+                    <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
+                    <option value="Construcción">Construcción</option>
+                    <option value="Herramientas Manuales">Herramientas Manuales</option>
+                    <option value="Gasfitería">Gasfitería</option>
+                    <option value="Pinturas">Pinturas</option>
+                    <option value="Electricidad">Electricidad</option>
+                  </Form.Select>
+                </div>
+              </div>
+              <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
+            </main>
+          }
+        />
 
-      {/* RUTAS DE ADMINISTRADOR (Panel limpio e independiente) */}
+        {/* Detalle dinámico de producto */}
+        <Route path="/productos/:id" element={<DetalleProducto productos={productos} />} />
+
+        {/* Flujo de compras */}
+        <Route
+          path="/carrito"
+          element={
+            <Carrito
+              carrito={carrito}
+              onCambiarCantidad={cambiarCantidad}
+              onEliminar={eliminarDelCarrito}
+              onVaciar={vaciarCarrito}
+            />
+          }
+        />
+        <Route
+          path="/checkout"
+          element={<Checkout carrito={carrito} onCompraExitosa={vaciarCarrito} />}
+        />
+        <Route path="/compra-exitosa" element={<CompraExitosa />} />
+        <Route path="/compra-fallida" element={<CompraFallida />} />
+
+        {/* Páginas informativas e institucionales */}
+        <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/blogs" element={<Blogs />} />
+        <Route path="/blogs/1" element={<DetalleBlog1 />} />
+        <Route path="/blogs/2" element={<DetalleBlog2 />} />
+        <Route path="/contacto" element={<Contacto />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
+
+        {/* Vistas de cliente */}
+        <Route path="/cliente/compras" element={<MisCompras />} />
+        <Route path="/cliente/perfil" element={<PerfilCliente />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NoEncontrada />} />
+      </Route>
+
+      {/* ---------------- 2. PANEL ADMINISTRATIVO ---------------- */}
       <Route path="/admin" element={<HomeAdmin />} />
       <Route
         path="/admin/productos"
-        element={
-          <AdminProductos
-            productos={productos}
-            setProductos={setProductos}
-          />
-        }
+        element={<AdminProductos productos={productos} setProductos={setProductos} />}
       />
       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
       <Route path="/admin/categorias" element={<AdminCategorias />} />
@@ -325,22 +180,9 @@ function App() {
       <Route path="/admin/reportes" element={<AdminReportes />} />
       <Route path="/admin/perfil" element={<AdminPerfil />} />
 
-      {/* RUTAS DE VENDEDOR (Panel limpio e independiente) */}
+      {/* ---------------- 3. PANEL DE VENDEDOR ---------------- */}
       <Route path="/vendedor/productos" element={<VendedorProductos />} />
       <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
-
-      {/* RUTA 404 */}
-      <Route
-        path="*"
-        element={
-          <div className="bg-light min-vh-100 d-flex flex-column">
-            <Cabecera />
-            <Navegacion cantidadCarrito={cantidadTotalCarrito} />
-            <div className="flex-grow-1"><NoEncontrada /></div>
-            <PiePagina />
-          </div>
-        }
-      />
     </Routes>
   );
 }

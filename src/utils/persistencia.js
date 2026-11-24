@@ -10,7 +10,7 @@ export function obtenerCarrito() {
   return guardados ? JSON.parse(guardados) : [];
 }
 
-// 2. Sesión de Usuario (Admin, Vendedor, Cliente)
+// 2. Sesión de Usuario
 export function obtenerSesion() {
   const sesion = localStorage.getItem("usuario_sesion");
   return sesion ? JSON.parse(sesion) : null;
@@ -38,21 +38,12 @@ export function guardarOrdenCliente(nuevaOrden) {
   );
 }
 
-
-/* Persistencia de productos de la ferretería */
-
-// Obtener los productos guardados
-export function obtenerProductos(productosIniciales) {
-  const guardados = localStorage.getItem(
-    "productos_los_maestros"
-  );
-
-  return guardados
-    ? JSON.parse(guardados)
-    : productosIniciales;
+// 4. Inventario de Productos
+export function obtenerProductos(productosIniciales = []) {
+  const guardados = localStorage.getItem("productos_los_maestros");
+  return guardados ? JSON.parse(guardados) : productosIniciales;
 }
 
-// Guardar los productos actualizados
 export function guardarProductos(productos) {
   localStorage.setItem(
     "productos_los_maestros",

@@ -1,13 +1,13 @@
-// src/pages/Checkout.jsx
+// src/components/Checkout.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import { formatearPrecio } from "../utils/precio";
 import { guardarOrdenCliente, obtenerSesion } from "../utils/persistencia";
 import { calcularTotal } from "../utils/carrito";
 
 function Checkout({ carrito, onCompraExitosa }) {
-  // Uso limpio de la utilidad de sesión
+  const navigate = useNavigate();
   const usuario = obtenerSesion();
 
   const [datos, setDatos] = useState({
@@ -24,9 +24,6 @@ function Checkout({ carrito, onCompraExitosa }) {
   });
 
   const [errores, setErrores] = useState({});
-  const [resultado, setResultado] = useState(null);
-
-  // Uso limpio de la utilidad de cálculo
   const total = calcularTotal(carrito);
 
   function cambiar(evento) {
@@ -57,71 +54,26 @@ function Checkout({ carrito, onCompraExitosa }) {
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
 
-    const compraExitosa = datos.pago === "aprobado";
+    const compraAprobada = datos.pago === "aprobado";
 
-    if (compraExitosa) {
-      guardarOrdenCliente({
+    if (compraAprobada) {
+      const nuevoPedido = {
         id: `#${Date.now().toString().slice(-8)}`,
         fecha: new Date().toISOString().split("T")[0],
         total: total,
+        cliente: { ...datos },
+        productos: carrito.map((producto) => ({ ...producto })),
         items: carrito.map((p) => `${p.nombre} (${p.cantidad})`).join(", "),
         estado: "Pagado"
-      });
+      };
 
-      onCompraExitosa();
+      guardarOrdenCliente(nuevoPedido);
+      if (onCompraExitosa) onCompraExitosa();
+
+      navigate("/compra-exitosa", { state: { pedido: nuevoPedido } });
+    } else {
+      navigate("/compra-fallida");
     }
-
-    setResultado({
-      exitosa: compraExitosa,
-      cliente: { ...datos },
-      productos: carrito.map((producto) => ({ ...producto })),
-      total: total
-    });
-  }
-
-  if (resultado !== null) {
-    return (
-      <main className="container py-5">
-        <div className="card shadow-sm">
-          <div className="card-body p-4">
-            <h1 className={resultado.exitosa ? "h2 text-success" : "h2 text-danger"}>
-              {resultado.exitosa ? "Compra simulada exitosa" : "Pago simulado rechazado"}
-            </h1>
-
-            <p>Cliente: {resultado.cliente.nombre} {resultado.cliente.apellido}</p>
-            <p>Correo: {resultado.cliente.correo}</p>
-
-            <h2 className="h4">Resumen del pedido</h2>
-            {resultado.productos.map((producto) => (
-              <p key={producto.id}>
-                {producto.nombre} x {producto.cantidad} - {formatearPrecio(producto.precio * producto.cantidad)}
-              </p>
-            ))}
-
-            <h3 className="h4">Total: {formatearPrecio(resultado.total)}</h3>
-
-            <p className="text-muted">
-              Esta operación es una simulación académica. No se realizaron cobros reales.
-            </p>
-
-            <div className="d-flex gap-2">
-              {resultado.exitosa ? (
-                <>
-                  <Link to="/" className="btn btn-success">
-                    Volver a la tienda
-                  </Link>
-                  <Link to="/cliente/compras" className="btn btn-outline-primary">
-                    📦 Ver Mis Compras
-                  </Link>
-                </>
-              ) : (
-                <Button onClick={() => setResultado(null)}>Volver a intentar</Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-    );
   }
 
   if (carrito.length === 0) {
@@ -292,13 +244,13 @@ function Checkout({ carrito, onCompraExitosa }) {
             <div className="card-body">
               <h2 className="h4">Resumen del carrito</h2>
               {carrito.map((producto) => (
-                <p key={producto.id}>
+                <p key={producto.id} className="mb-1">
                   {producto.nombre} x {producto.cantidad} - {formatearPrecio(producto.precio * producto.cantidad)}
                 </p>
               ))}
               <hr />
-              <h3 className="h4">Total: {formatearPrecio(total)}</h3>
-              <Link to="/carrito">Volver al carrito</Link>
+              <h3 className="h5">Total: {formatearPrecio(total)}</h3>
+              <Link to="/carrito" className="btn btn-link px-0">← Volver al carrito</Link>
             </div>
           </div>
         </Col>
