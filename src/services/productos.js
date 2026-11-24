@@ -1,12 +1,12 @@
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
+const API_URL = import.meta.env.VITE_PRODUCTOS_API_URL?.replace(/\/+$/, "");
 
 export async function obtenerProductos(signal) {
   if (!API_URL) {
-    throw new Error("Falta configurar VITE_API_URL para cargar el catálogo.");
+    throw new Error("Falta configurar VITE_PRODUCTOS_API_URL para cargar el catálogo.");
   }
 
-  const respuesta = await fetch(`${API_URL}/productos`, { signal });
+  const respuesta = await fetch(API_URL, { signal });
 
   if (!respuesta.ok) {
     throw new Error(`No se pudieron cargar los productos (HTTP ${respuesta.status}).`);
