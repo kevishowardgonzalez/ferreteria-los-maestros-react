@@ -5,6 +5,14 @@ import userEvent from "@testing-library/user-event";
 import TarjetaProducto from "./TarjetaProducto";
 import { productos } from "../data/productos";
 
+vi.mock("../services/inventario", () => ({
+  consultarExistencias: vi.fn(async (id) => {
+    if (id === 99) throw Object.assign(new Error("Sin ficha"), { estado: 404 });
+    if (id === 100) throw new Error("Sin conexión");
+    return { stockActual: { 1: 8, 2: 3, 3: 0 }[id], stockMinimo: 5 };
+  }),
+}));
+
 describe("TarjetaProducto", () => {
   const taladroDisponible = {
     id: 1,
@@ -44,21 +52,23 @@ describe("TarjetaProducto", () => {
     expect(screen.getByText("Mandril de 13mm con 2 baterías de litio.")).toBeInTheDocument();
   });
 
-  it("muestra el botón habilitado cuando el producto tiene stock", () => {
+  it("muestra el botón habilitado cuando el producto tiene stock", async () => {
     render(<TarjetaProducto producto={taladroDisponible} onAgregar={() => {}} />);
+    await screen.findByText("8 unidades");
     const boton = screen.getByRole("button", { name: /añadir al carrito/i });
     expect(boton).toBeInTheDocument();
     expect(boton).not.toBeDisabled();
   });
 
-  it("muestra aviso condicional de stock crítico cuando quedan 5 o menos unidades", () => {
+  it("muestra aviso condicional de stock crítico cuando quedan 5 o menos unidades", async () => {
     render(<TarjetaProducto producto={productoCritico} onAgregar={() => {}} />);
-    expect(screen.getByText(/¡últimas unidades!/i)).toBeInTheDocument();
+    expect(await screen.findByText(/¡últimas unidades!/i)).toBeInTheDocument();
   });
 
-  it("deshabilita el botón y muestra 'Sin stock' cuando el stock es 0", () => {
+  it("deshabilita el botón y muestra 'Sin stock' cuando el stock es 0", async () => {
     render(<TarjetaProducto producto={cementoAgotado} onAgregar={() => {}} />);
-    const boton = screen.getByRole("button", { name: /sin stock/i });
+    await screen.findByText("Sin stock");
+    const boton = screen.getByRole("button", { name: /añadir al carrito/i });
     expect(boton).toBeInTheDocument();
     expect(boton).toBeDisabled();
   });
@@ -69,11 +79,20 @@ describe("TarjetaProducto", () => {
 
     render(<TarjetaProducto producto={taladroDisponible} onAgregar={onAgregarMock} />);
 
+    await screen.findByText("8 unidades");
     await usuario.click(screen.getByRole("button", { name: /añadir al carrito/i }));
 
     expect(onAgregarMock).toHaveBeenCalledTimes(1);
     expect(onAgregarMock).toHaveBeenCalledWith(taladroDisponible);
   });
+
+  it.each([[99, "Inventario pendiente"], [100, "Disponibilidad no consultable"]])(
+    "mantiene visible el producto %s y bloquea la adición sin saldo oficial", async (id, mensaje) => {
+      render(<TarjetaProducto producto={{ ...taladroDisponible, id }} onAgregar={vi.fn()} />);
+      expect(await screen.findByText(mensaje)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /añadir al carrito/i })).toBeDisabled();
+    },
+  );
 
   it("valida que el catálogo de datos contenga los productos con id, precio y stock numéricos", () => {
     expect(productos.length).toBeGreaterThanOrEqual(4);

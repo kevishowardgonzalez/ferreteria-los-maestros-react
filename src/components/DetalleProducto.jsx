@@ -1,3 +1,5 @@
+import { useExistencias } from "../hooks/useInventario";
+import { textoExistencias } from "../utils/existencias";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { buscarProducto } from "../services/productos";
@@ -14,10 +16,13 @@ function DetalleProducto() {
     return () => { vigente = false; };
   }, [id]);
 
+  const productoConsultado = resultado?.id === id ? resultado.producto : null;
+  const { estado, ficha } = useExistencias(productoConsultado?.retirado ? null : productoConsultado?.id);
+
   if (resultado?.id !== id) return <p role="status">Cargando producto...</p>;
   if (resultado.error && resultado.error.estado !== 404) return <p role="alert">{resultado.error.message}</p>;
   const { producto } = resultado;
-  if (!producto) {
+  if (!producto || producto.retirado) {
     return (
       <main className="container py-4">
         <h1 className="h3">Producto no encontrado</h1>
@@ -51,10 +56,10 @@ function DetalleProducto() {
 
       <p>
         <strong>Stock disponible:</strong>{" "}
-        {producto.stock} unidades
+        {textoExistencias(estado, ficha)}
       </p>
 
-      {producto.stock === 0 && (
+      {ficha?.stockActual === 0 && (
         <p className="text-danger fw-bold">
           Producto sin stock disponible.
         </p>

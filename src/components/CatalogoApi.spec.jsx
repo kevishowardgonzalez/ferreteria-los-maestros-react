@@ -23,7 +23,8 @@ it("carga el catálogo y filtra por las categorías activas de la API", async ()
   let responder;
   vi.stubGlobal("fetch", vi.fn((url) => url.endsWith("/activas")
     ? Promise.resolve(Response.json(categorias))
-    : new Promise((resolve) => { responder = resolve; })));
+    : url.includes("/api/v1/inventario/producto/") ? Promise.resolve(Response.json({ stockActual: 4, stockMinimo: 5 }))
+      : new Promise((resolve) => { responder = resolve; })));
   render(<MemoryRouter initialEntries={["/productos"]}><App /></MemoryRouter>);
   expect(screen.getByRole("status")).toHaveTextContent("Cargando productos");
   responder(Response.json([herramienta, cemento]));
@@ -44,7 +45,8 @@ it("muestra el error de conexión y no carga datos locales", async () => {
 
 it("muestra información real y stock crítico en la vista de solo lectura del vendedor", async () => {
   vi.stubGlobal("fetch", vi.fn((url) => Promise.resolve(Response.json(
-    url.endsWith("/activas") ? categorias : [herramienta],
+    url.endsWith("/activas") ? categorias : url.endsWith("/api/v1/inventario")
+      ? [{ productoId: 20, stockActual: 3, stockMinimo: 5 }] : [herramienta],
   ))));
   prepararSesion("VENDEDOR");
   render(<MemoryRouter initialEntries={["/vendedor/productos"]}><App /></MemoryRouter>);

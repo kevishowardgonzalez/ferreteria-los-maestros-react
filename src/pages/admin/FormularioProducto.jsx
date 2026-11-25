@@ -29,7 +29,7 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion, cat
     if (!datos.nombre.trim()) nuevosErrores.nombre = "Nombre obligatorio";
     if (!datos.categoria) nuevosErrores.categoria = "Selecciona categoría";
     if (datos.precio === "" || !Number.isFinite(Number(datos.precio)) || Number(datos.precio) < 0) nuevosErrores.precio = "Ingresa un precio no negativo";
-    if (datos.stock === "" || !Number.isInteger(Number(datos.stock)) || Number(datos.stock) < 0) nuevosErrores.stock = "Ingresa un stock entero no negativo";
+    if (!productoAEditar && (datos.stock === "" || !Number.isInteger(Number(datos.stock)) || Number(datos.stock) < 0 || Number(datos.stock) > 2147483647)) nuevosErrores.stock = "Ingresa un stock entero no negativo";
 
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
@@ -38,7 +38,7 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion, cat
       nombre: datos.nombre.trim(),
       categoria: datos.categoria,
       precio: Number(datos.precio),
-      stock: Number(datos.stock),
+      stock: productoAEditar ? productoAEditar.stock : Number(datos.stock),
       descripcion: datos.descripcion.trim(),
     });
 
@@ -98,8 +98,8 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion, cat
         </Form.Control.Feedback>
       </Form.Group>
 
-      <Form.Group className="mb-3" controlId="formStock">
-        <Form.Label>Stock inicial / actual</Form.Label>
+      {!productoAEditar && <Form.Group className="mb-3" controlId="formStock">
+        <Form.Label>Stock inicial</Form.Label>
         <Form.Control
           type="number"
           name="stock"
@@ -112,7 +112,7 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion, cat
         <Form.Control.Feedback type="invalid">
           {errores.stock}
         </Form.Control.Feedback>
-      </Form.Group>
+      </Form.Group>}
 
       <Form.Group className="mb-3" controlId="formDescripcion">
         <Form.Label>Descripción</Form.Label>

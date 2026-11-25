@@ -1,8 +1,12 @@
+import { useInventario } from "../../hooks/useInventario";
+import { textoExistencias, stockCritico as esCritico } from "../../utils/existencias";
 // src/pages/vendedor/VendedorProductos.jsx
 import MenuVendedor from "./MenuVendedor";
 
-function VendedorProductos({ productos = [], cargando, error }) {
-  const stockCritico = productos.filter((p) => p.stock <= 5).length;
+function VendedorProductos({ productos = [], cargando, error, revision }) {
+  const { fichas, estado } = useInventario(revision);
+  const porProducto = new Map(fichas?.map((ficha) => [ficha.productoId, ficha]));
+  const stockCritico = productos.filter((p) => esCritico(porProducto.get(p.id))).length;
 
   return (
     <div className="d-flex min-vh-100 bg-light w-100">
@@ -26,12 +30,13 @@ function VendedorProductos({ productos = [], cargando, error }) {
                   <th>Categoría</th>
                   <th>Precio</th>
                   <th>Stock</th>
+                  <th>Mínimo</th>
                   <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {(cargando || error || productos.length === 0) && (
-                  <tr><td colSpan={5}>{cargando ? <span role="status">Cargando productos...</span> :
+                  <tr><td colSpan={6}>{cargando ? <span role="status">Cargando productos...</span> :
                     error ? <span role="alert">{error}</span> : "No hay productos."}</td></tr>
                 )}
                 {productos.map((prod) => (
@@ -39,9 +44,10 @@ function VendedorProductos({ productos = [], cargando, error }) {
                     <td className="fw-semibold">{prod.nombre}</td>
                     <td>{prod.categoria}</td>
                     <td>${prod.precio.toLocaleString("es-CL")}</td>
-                    <td>{prod.stock}</td>
+                    <td>{textoExistencias(estado, porProducto.get(prod.id))}</td>
+                    <td>{porProducto.get(prod.id)?.stockMinimo ?? "—"}</td>
                     <td>
-                      {prod.stock <= 5 ? (
+                      {!porProducto.has(prod.id) ? "—" : esCritico(porProducto.get(prod.id)) ? (
                         <span className="badge bg-danger">Crítico</span>
                       ) : (
                         <span className="badge bg-success">Disponible</span>

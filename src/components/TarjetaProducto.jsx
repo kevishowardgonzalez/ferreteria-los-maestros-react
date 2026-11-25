@@ -1,5 +1,10 @@
+import { useExistencias } from "../hooks/useInventario";
+import { textoExistencias, stockCritico } from "../utils/existencias";
+
 // src/components/TarjetaProducto.jsx
-function TarjetaProducto({ producto, onAgregar, detalle }) {
+function TarjetaProducto({ producto, onAgregar, detalle, revision }) {
+  const { estado, ficha } = useExistencias(producto.id, revision);
+  const disponible = ficha?.stockActual > 0;
   return (
     <article className="card h-100 shadow-sm border-0">
       <div className="card-body d-flex flex-column">
@@ -14,7 +19,8 @@ function TarjetaProducto({ producto, onAgregar, detalle }) {
           ${producto.precio?.toLocaleString("es-CL")}
         </p>
 
-        {producto.stock > 0 && producto.stock <= 5 && (
+        <p className="small mb-2">{textoExistencias(estado, ficha)}</p>
+        {disponible && stockCritico(ficha) && (
           <p className="text-danger fw-bold small mb-2">¡Últimas unidades!</p>
         )}
 
@@ -22,10 +28,10 @@ function TarjetaProducto({ producto, onAgregar, detalle }) {
         <button
           type="button"
           className="btn btn-warning w-100 fw-bold mt-auto"
-          onClick={() => onAgregar(producto)}
-          disabled={producto.stock === 0}
+          onClick={() => onAgregar({ ...producto, stock: ficha.stockActual })}
+          disabled={!disponible}
         >
-          {producto.stock === 0 ? "Sin stock" : "Añadir al Carrito"}
+          Añadir al Carrito
         </button>
       </div>
     </article>
