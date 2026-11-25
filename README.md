@@ -77,9 +77,16 @@ cd ferreteria-los-maestros-react
 
 ### 3. Instalar las dependencias
 
+Usa Node.js 24 y npm 11. El proyecto utiliza React 19, Vite 8 y Vitest 4.
+
 ```bash
-npm install
+npm ci
 ```
+
+Usa `.env.example` como referencia para configurar las URL base en `.env.local`.
+Los valores `VITE_` son públicos y contienen únicamente direcciones, sin
+credenciales ni rutas de endpoints. Autoriza el origen de Vite mediante
+`APP_CORS_ALLOWED_ORIGIN` en los servicios Spring.
 
 ### 4. Iniciar el servidor de desarrollo
 
@@ -119,15 +126,49 @@ npm run build
 npm run preview
 ```
 
+### Pruebas y lint
+
+```bash
+npm run test:run -- --maxWorkers=2
+npx --no-install oxlint
+```
+
 ---
 
 ## 🔐 Roles del Sistema
 
 El sistema contempla los siguientes roles:
 
-* **Administrador:** Gestión completa del sistema y productos.
-* **Vendedor:** Gestión relacionada con ventas e inventario.
+* **Administrador:** Gestiona productos, categorías y fichas de Inventario. Registra movimientos y consulta el historial.
+* **Vendedor:** Consulta el catálogo y el listado de Inventario. Las escrituras y el historial de movimientos son exclusivos de ADMIN.
 * **Cliente:** Acceso a la tienda, productos y carrito de compras.
+
+### Catálogo, seguridad e Inventario
+
+Inicia Auth (8081), Categorías (8084), Productos (8085) e Inventario (8086)
+para usar el catálogo y el panel. Los demás puertos son Usuarios 8082,
+Roles 8083, Boletas 8087, Carrito 8088, Contacto 8089 y Foro 8090.
+Cada servicio usa su propio esquema MySQL. Configura `JWT_SECRET` y
+`JWT_ISSUER` en el backend y `PRODUCTOS_API_URL` en Inventario.
+El [README del backend y su guía de SKU](https://github.com/kevishowardgonzalez/ferreteria-backend#10-instalación-y-ejecución)
+detallan los permisos de la API y la actualización de bases existentes.
+
+React usa `src/config/api.js` y `src/services/clienteHttp.js` para la comunicación
+REST. `src/services/inventario.js` consulta el saldo público en
+`/api/v1/inventario/producto/{id}` y envía el JWT en las operaciones protegidas.
+Al dar de alta un producto, el panel crea el registro en Productos y luego la
+ficha en Inventario. Si solo se completa el primer paso, el panel permite
+recuperar la ficha pendiente.
+
+La tienda usa `InventarioItem.stockActual` como disponibilidad oficial.
+`Producto.stock` es un atributo legado. En el backend, el equipo autorizó
+como técnicas adicionales el bloqueo pesimista de movimientos y la consulta
+HTTP a Productos al registrar una ficha.
+
+El backend aplica los permisos incluso si se modifica el rol local. El JWT
+de una sesión cerrada sigue vigente hasta su expiración. El carrito conserva
+cantidades en almacenamiento local. La siguiente etapa conectará carrito,
+compras y boletas y revalidará existencias al confirmar la venta.
 
 ## Despliegue en AWS
 
