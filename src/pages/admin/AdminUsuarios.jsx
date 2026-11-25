@@ -3,13 +3,16 @@ import { useState, useEffect } from "react";
 import MenuAdmin from "./MenuAdmin";
 import { Form, Button, Table, Badge, Card, Row, Col } from "react-bootstrap";
 
+const etiquetasRol = { ADMIN: "Administrador", VENDEDOR: "Vendedor", CLIENTE: "Cliente" };
+const rolesAnteriores = { Administrador: "ADMIN", Vendedor: "VENDEDOR", Cliente: "CLIENTE" };
+
 const usuariosIniciales = [
   {
     id: 1,
     rut: "12345678-5",
     nombre: "Kevis Howard",
     correo: "admin@duoc.cl",
-    rol: "Administrador",
+    rol: "ADMIN",
     estado: "Activo"
   },
   {
@@ -17,7 +20,7 @@ const usuariosIniciales = [
     rut: "15987456-3",
     nombre: "Javier Cruz",
     correo: "vendedor@duoc.cl",
-    rol: "Vendedor",
+    rol: "VENDEDOR",
     estado: "Activo"
   },
   {
@@ -25,7 +28,7 @@ const usuariosIniciales = [
     rut: "19876543-2",
     nombre: "Yerickson Rodríguez",
     correo: "yerickson@gmail.com",
-    rol: "Cliente",
+    rol: "CLIENTE",
     estado: "Activo"
   }
 ];
@@ -33,7 +36,10 @@ const usuariosIniciales = [
 function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState(() => {
     const guardados = localStorage.getItem("usuarios_sistema");
-    return guardados ? JSON.parse(guardados) : usuariosIniciales;
+    return guardados ? JSON.parse(guardados).map((usuario) => ({
+      ...usuario,
+      rol: rolesAnteriores[usuario.rol] ?? usuario.rol,
+    })) : usuariosIniciales;
   });
 
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
@@ -44,7 +50,7 @@ function AdminUsuarios() {
     rut: "",
     nombre: "",
     correo: "",
-    rol: "Cliente"
+    rol: "CLIENTE"
   });
 
   const [errores, setErrores] = useState({});
@@ -62,7 +68,7 @@ function AdminUsuarios() {
         rol: usuarioAEditar.rol
       });
     } else {
-      setDatosForm({ rut: "", nombre: "", correo: "", rol: "Cliente" });
+      setDatosForm({ rut: "", nombre: "", correo: "", rol: "CLIENTE" });
     }
   }, [usuarioAEditar]);
 
@@ -103,7 +109,7 @@ function AdminUsuarios() {
       setMensaje(`Usuario "${datosForm.nombre}" creado exitosamente.`);
     }
 
-    setDatosForm({ rut: "", nombre: "", correo: "", rol: "Cliente" });
+    setDatosForm({ rut: "", nombre: "", correo: "", rol: "CLIENTE" });
   }
 
   // 2. DAR DE BAJA (ELIMINAR) USUARIO
@@ -119,7 +125,7 @@ function AdminUsuarios() {
     (u) =>
       u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       u.correo.toLowerCase().includes(busqueda.toLowerCase()) ||
-      u.rol.toLowerCase().includes(busqueda.toLowerCase())
+      (etiquetasRol[u.rol] ?? u.rol).toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
@@ -205,9 +211,9 @@ function AdminUsuarios() {
                 <Form.Group controlId="rol">
                   <Form.Label>Asignar Rol</Form.Label>
                   <Form.Select name="rol" value={datosForm.rol} onChange={cambiar}>
-                    <option value="Administrador">Administrador</option>
-                    <option value="Vendedor">Vendedor</option>
-                    <option value="Cliente">Cliente</option>
+                    <option value="ADMIN">Administrador</option>
+                    <option value="VENDEDOR">Vendedor</option>
+                    <option value="CLIENTE">Cliente</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -266,15 +272,15 @@ function AdminUsuarios() {
                     <td>
                       <Badge
                         bg={
-                          u.rol === "Administrador"
+                          u.rol === "ADMIN"
                             ? "warning"
-                            : u.rol === "Vendedor"
+                            : u.rol === "VENDEDOR"
                               ? "info"
                               : "success"
                         }
-                        text={u.rol === "Administrador" ? "dark" : "white"}
+                        text={u.rol === "ADMIN" ? "dark" : "white"}
                       >
-                        {u.rol}
+                        {etiquetasRol[u.rol] ?? u.rol}
                       </Badge>
                     </td>
                     <td>

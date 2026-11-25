@@ -1,6 +1,8 @@
+import SesionProvider from "../../components/SesionProvider";
+import { prepararSesion } from "../../test/sesion";
 // src/pages/admin/AdminProductos.spec.jsx
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as renderReact, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminProductos from "./AdminProductos";
 
@@ -54,6 +56,12 @@ vi.mock("./FormularioProducto", () => ({
   ),
 }));
 
+function render(componente) {
+  return renderReact(<SesionProvider>{componente}</SesionProvider>);
+}
+
+let token;
+
 describe("AdminProductos", () => {
   const productosPrueba = [
     { id: 1, nombre: "Martillo Galponero", categoria: "Herramientas Manuales", precio: 9990, stock: 12, descripcion: "Mango de fibra" },
@@ -67,7 +75,8 @@ describe("AdminProductos", () => {
   });
 
   beforeEach(() => {
-    localStorage.setItem("usuario_sesion", JSON.stringify({ rol: "Administrador", token: "token-prueba" }));
+    sessionStorage.clear();
+    token = prepararSesion("ADMIN").token;
     vi.resetAllMocks();
     for (const operacion of Object.values(api)) operacion.mockResolvedValue(null);
   });
@@ -127,7 +136,7 @@ describe("AdminProductos", () => {
     await usuario.click(botonesEliminar[0]);
 
     expect(window.confirm).toHaveBeenCalled();
-    expect(api.eliminarProducto).toHaveBeenCalledWith(1, "token-prueba");
+    expect(api.eliminarProducto).toHaveBeenCalledWith(1, token);
     expect(recargarMock).toHaveBeenCalled();
   });
 
@@ -191,7 +200,7 @@ describe("AdminProductos", () => {
     const botonActualizar = screen.getByRole("button", { name: /actualizar producto/i });
     await usuario.click(botonActualizar);
 
-    expect(api.actualizarProducto).toHaveBeenCalledWith(1, expect.any(Object), "token-prueba");
+    expect(api.actualizarProducto).toHaveBeenCalledWith(1, expect.any(Object), token);
     expect(recargarMock).toHaveBeenCalled();
 
 
@@ -214,7 +223,7 @@ describe("AdminProductos", () => {
     const botonGuardar = screen.getByRole("button", { name: /guardar producto/i });
     await usuario.click(botonGuardar);
 
-    expect(api.crearProducto).toHaveBeenCalledWith(expect.objectContaining({ nombre: "Huincha Nueva 5M" }), "token-prueba");
+    expect(api.crearProducto).toHaveBeenCalledWith(expect.objectContaining({ nombre: "Huincha Nueva 5M" }), token);
     expect(recargarMock).toHaveBeenCalled();
 
 
@@ -243,7 +252,7 @@ describe("AdminProductos", () => {
   });
 
   it("oculta los controles de edición y eliminación si el usuario tiene rol 'Vendedor'", () => {
-    localStorage.setItem("usuario_sesion", JSON.stringify({ rol: "Vendedor" }));
+    prepararSesion("VENDEDOR");
     render(<AdminProductos productos={productosPrueba} recargar={() => { }} />);
 
     expect(screen.queryByTitle("Editar producto")).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { respuestaSesion } from "../test/sesion";
 // src/utils/persistencia.spec.js
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
@@ -15,6 +16,7 @@ import {
 describe("persistencia.js", () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -32,7 +34,7 @@ describe("persistencia.js", () => {
   });
 
   it("maneja el almacenamiento y recuperación de la sesión de usuario", () => {
-    const usuario = { correo: "admin@duoc.cl", rol: "Administrador" };
+    const usuario = respuestaSesion("ADMIN");
     guardarSesion(usuario);
     expect(obtenerSesion()).toEqual(usuario);
 

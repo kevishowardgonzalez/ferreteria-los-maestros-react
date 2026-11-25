@@ -9,6 +9,8 @@ import { useCarrito } from "./hooks/useCarrito";
 // 2. Componentes estructurales y de tienda (en ./components/)
 import Cabecera from "./components/Cabecera";
 import Navegacion from "./components/Navegacion";
+import SesionProvider from "./components/SesionProvider";
+import RutaProtegida from "./components/RutaProtegida";
 import PiePagina from "./components/PiePagina";
 import Bienvenida from "./components/Bienvenida";
 import Catalogo from "./components/Catalogo";
@@ -59,7 +61,7 @@ function LayoutTienda({ cantidadCarrito }) {
   );
 }
 
-function App() {
+function RutasApp() {
   // Estado y filtros de inventario gestionados por el Hook
   const {
     productos,
@@ -157,30 +159,39 @@ function App() {
         <Route path="/registro" element={<Registro />} />
 
         {/* Vistas de cliente */}
-        <Route path="/cliente/compras" element={<MisCompras />} />
-        <Route path="/cliente/perfil" element={<PerfilCliente />} />
+        <Route element={<RutaProtegida rol="CLIENTE" />}>
+          <Route path="/cliente/compras" element={<MisCompras />} />
+          <Route path="/cliente/perfil" element={<PerfilCliente />} />
+        </Route>
 
         {/* 404 */}
         <Route path="*" element={<NoEncontrada />} />
       </Route>
 
       {/* ---------------- 2. PANEL ADMINISTRATIVO ---------------- */}
-      <Route path="/admin" element={<HomeAdmin />} />
-      <Route
-        path="/admin/productos"
-        element={<AdminProductos productos={productos} categorias={categorias} recargar={recargar} cargando={cargando} errorCarga={error || errorCategorias} />}
-      />
-      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-      <Route path="/admin/categorias" element={<AdminCategorias alCambiar={recargar} />} />
-      <Route path="/admin/ordenes" element={<AdminOrdenes />} />
-      <Route path="/admin/reportes" element={<AdminReportes />} />
-      <Route path="/admin/perfil" element={<AdminPerfil />} />
+      <Route element={<RutaProtegida rol="ADMIN" />}>
+        <Route path="/admin" element={<HomeAdmin />} />
+        <Route
+          path="/admin/productos"
+          element={<AdminProductos productos={productos} categorias={categorias} recargar={recargar} cargando={cargando} errorCarga={error || errorCategorias} />}
+        />
+        <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+        <Route path="/admin/categorias" element={<AdminCategorias alCambiar={recargar} />} />
+        <Route path="/admin/ordenes" element={<AdminOrdenes />} />
+        <Route path="/admin/reportes" element={<AdminReportes />} />
+        <Route path="/admin/perfil" element={<AdminPerfil />} />
+      </Route>
 
       {/* ---------------- 3. PANEL DE VENDEDOR ---------------- */}
-      <Route path="/vendedor/productos" element={<VendedorProductos productos={productos} cargando={cargando} error={error} />} />
-      <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
+      <Route element={<RutaProtegida rol="VENDEDOR" />}>
+        <Route path="/vendedor/productos" element={<VendedorProductos productos={productos} cargando={cargando} error={error} />} />
+        <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
+      </Route>
+
     </Routes>
   );
 }
 
-export default App;
+export default function App() {
+  return <SesionProvider><RutasApp /></SesionProvider>;
+}

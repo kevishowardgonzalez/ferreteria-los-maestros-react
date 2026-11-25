@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import MenuAdmin from "./MenuAdmin";
 import { actualizarCategoria, crearCategoria, desactivarCategoria, listarCategorias } from "../../services/categorias";
-import { obtenerSesion } from "../../utils/persistencia";
+import { useSesion } from "../../hooks/useSesion";
 
 const inicial = { nombre: "", descripcion: "", activo: true };
 
-export default function AdminCategorias({ token, alCambiar }) {
+export default function AdminCategorias({ alCambiar }) {
   const [categorias, setCategorias] = useState([]);
   const [datos, setDatos] = useState(inicial);
   const [id, setId] = useState(null);
@@ -16,20 +16,25 @@ export default function AdminCategorias({ token, alCambiar }) {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [errorCarga, setErrorCarga] = useState("");
-  const usuario = obtenerSesion();
-  const puedeEditar = ["ADMIN", "Administrador"].includes(usuario?.rol);
-  const credencial = token ?? usuario?.token;
+  const { usuario, rechazarCredencial } = useSesion();
+  const puedeEditar = usuario?.rol === "ADMIN";
+  const credencial = usuario?.token;
 
   useEffect(() => {
+    if (!credencial) return;
     let vigente = true;
     setCargando(true);
     setErrorCarga("");
     listarCategorias(credencial)
       .then((lista) => { if (vigente) setCategorias(lista); })
-      .catch((error) => { if (vigente) setErrorCarga(error.message); })
+      .catch((error) => {
+        if (!vigente) return;
+        rechazarCredencial(error, credencial);
+        setErrorCarga(error.message);
+      })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [revision, credencial]);
+  }, [revision, credencial, rechazarCredencial]);
 
   function limpiarFormulario() {
     setId(null);
@@ -48,6 +53,7 @@ export default function AdminCategorias({ token, alCambiar }) {
       setMensaje(exito);
       return true;
     } catch (error) {
+      rechazarCredencial(error, credencial);
       setError(error.message);
       return false;
     } finally {

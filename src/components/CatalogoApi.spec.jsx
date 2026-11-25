@@ -1,3 +1,4 @@
+import { prepararSesion, respuestaSesion } from "../test/sesion";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -6,6 +7,7 @@ import App from "../App";
 
 afterEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -44,6 +46,7 @@ it("muestra información real y stock crítico en la vista de solo lectura del v
   vi.stubGlobal("fetch", vi.fn((url) => Promise.resolve(Response.json(
     url.endsWith("/activas") ? categorias : [herramienta],
   ))));
+  prepararSesion("VENDEDOR");
   render(<MemoryRouter initialEntries={["/vendedor/productos"]}><App /></MemoryRouter>);
   const tabla = screen.getByRole("table");
   expect(await within(tabla).findByText("Alicate API")).toBeInTheDocument();
@@ -53,13 +56,13 @@ it("muestra información real y stock crítico en la vista de solo lectura del v
 });
 
 it("crea, edita y desactiva categorías a través de REST y vuelve a consultar", async () => {
-  localStorage.setItem("usuario_sesion", JSON.stringify({ rol: "ADMIN", token: "jwt-de-prueba" }));
+  const { token } = prepararSesion("ADMIN");
   let lista = [];
   const fetchApi = vi.fn(async (url, opciones) => {
     if (url.endsWith("/activas")) return Response.json(lista.filter((item) => item.activo));
     if (url.endsWith("/api/productos")) return Response.json([]);
+    expect(opciones.headers.get("Authorization")).toBe("Bearer " + token);
     if (opciones.method === "GET") return Response.json(lista);
-    expect(opciones.headers.get("Authorization")).toBe("Bearer jwt-de-prueba");
     if (opciones.method === "DELETE") {
       lista = lista.map((item) => ({ ...item, activo: false }));
       return new Response(null, { status: 204 });
@@ -84,4 +87,51 @@ it("crea, edita y desactiva categorías a través de REST y vuelve a consultar",
   await userEvent.click(within(tabla).getByRole("button", { name: "Desactivar" }));
   await within(tabla).findByText("Inactiva");
   expect(fetchApi.mock.calls.filter(([url, o]) => url.endsWith("/api/v1/categorias") && o.method === "GET")).toHaveLength(4);
+});
+
+
+it("redirige a login al visitante que escribe una URL administrativa", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json([])));
+  render(<MemoryRouter initialEntries={["/admin/categorias"]}><App /></MemoryRouter>);
+  expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
+});
+
+it("redirige al vendedor que intenta entrar al mantenedor de escritura", async () => {
+  prepararSesion("VENDEDOR");
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json([])));
+  render(<MemoryRouter initialEntries={["/admin/productos"]}><App /></MemoryRouter>);
+  expect(await screen.findByText("Panel de Vendedor")).toBeInTheDocument();
+  expect(screen.queryByText("Registrar Nuevo Producto")).not.toBeInTheDocument();
+});
+
+it("descarta una sesión vencida, aunque esté guardada", async () => {
+  sessionStorage.setItem("usuario_sesion", JSON.stringify(respuestaSesion("ADMIN", {}, 1)));
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json([])));
+  render(<MemoryRouter initialEntries={["/admin/categorias"]}><App /></MemoryRouter>);
+  expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
+  expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+});
+
+it("cierra la sesión local desde el menú del vendedor", async () => {
+  prepararSesion("VENDEDOR");
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json([])));
+  render(<MemoryRouter initialEntries={["/vendedor/productos"]}><App /></MemoryRouter>);
+  await userEvent.click(screen.getByRole("link", { name: /cerrar sesión/i }));
+  expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
+  expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+});
+
+it.each([401, 403])("distingue un HTTP %s en categorías administrativas", async (estado) => {
+  prepararSesion("ADMIN");
+  vi.stubGlobal("fetch", vi.fn(async (url) => url.endsWith("/api/v1/categorias")
+    ? Response.json({ mensaje: "Solicitud rechazada" }, { status: estado })
+    : Response.json([])));
+  render(<MemoryRouter initialEntries={["/admin/categorias"]}><App /></MemoryRouter>);
+  if (estado === 401) {
+    expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
+    expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+  } else {
+    expect(await screen.findByText("Solicitud rechazada")).toBeInTheDocument();
+    expect(sessionStorage.getItem("usuario_sesion")).not.toBeNull();
+  }
 });
