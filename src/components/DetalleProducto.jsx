@@ -1,15 +1,22 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { buscarProducto } from "../services/productos";
 
-function DetalleProducto({ productos }) {
-  // Obtener el ID del producto desde la URL
+function DetalleProducto() {
   const { id } = useParams();
+  const [resultado, setResultado] = useState(null);
 
-  // Buscar el producto en el estado compartido
-  const producto = productos.find(
-    (item) => item.id === Number(id)
-  );
+  useEffect(() => {
+    let vigente = true;
+    buscarProducto(id)
+      .then((producto) => { if (vigente) setResultado({ id, producto }); })
+      .catch((error) => { if (vigente) setResultado({ id, error }); });
+    return () => { vigente = false; };
+  }, [id]);
 
-  // Si el producto no existe
+  if (resultado?.id !== id) return <p role="status">Cargando producto...</p>;
+  if (resultado.error && resultado.error.estado !== 404) return <p role="alert">{resultado.error.message}</p>;
+  const { producto } = resultado;
   if (!producto) {
     return (
       <main className="container py-4">

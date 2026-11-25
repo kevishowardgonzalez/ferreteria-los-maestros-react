@@ -1,5 +1,5 @@
 // src/components/TarjetaProducto.jsx
-function TarjetaProducto({ producto, onAgregar }) {
+function TarjetaProducto({ producto, onAgregar, detalle }) {
   return (
     <article className="card h-100 shadow-sm border-0">
       <div className="card-body d-flex flex-column">
@@ -18,6 +18,7 @@ function TarjetaProducto({ producto, onAgregar }) {
           <p className="text-danger fw-bold small mb-2">¡Últimas unidades!</p>
         )}
 
+        {detalle}
         <button
           type="button"
           className="btn btn-warning w-100 fw-bold mt-auto"

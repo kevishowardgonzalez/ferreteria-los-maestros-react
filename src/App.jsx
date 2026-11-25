@@ -63,7 +63,7 @@ function App() {
   // Estado y filtros de inventario gestionados por el Hook
   const {
     productos,
-    setProductos,
+    categorias, cargando, error, errorCategorias, recargar,
     categoria,
     setCategoria,
     visibles,
@@ -115,22 +115,18 @@ function App() {
                     aria-label="Filtrar por categoría"
                   >
                     <option value="Todas">Todas las categorías</option>
-                    <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-                    <option value="Construcción">Construcción</option>
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Gasfitería">Gasfitería</option>
-                    <option value="Pinturas">Pinturas</option>
-                    <option value="Electricidad">Electricidad</option>
+                    {categorias.map(({ id, nombre }) => <option key={id} value={nombre}>{nombre}</option>)}
                   </Form.Select>
                 </div>
               </div>
-              <Catalogo productos={visibles} onAgregar={agregarAlCarrito} />
+              {errorCategorias && <p role="alert">{errorCategorias}</p>}
+              <Catalogo productos={visibles} onAgregar={agregarAlCarrito} cargando={cargando} error={error} />
             </main>
           }
         />
 
         {/* Detalle dinámico de producto */}
-        <Route path="/productos/:id" element={<DetalleProducto productos={productos} />} />
+        <Route path="/productos/:id" element={<DetalleProducto />} />
 
         {/* Flujo de compras */}
         <Route
@@ -172,16 +168,16 @@ function App() {
       <Route path="/admin" element={<HomeAdmin />} />
       <Route
         path="/admin/productos"
-        element={<AdminProductos productos={productos} setProductos={setProductos} />}
+        element={<AdminProductos productos={productos} categorias={categorias} recargar={recargar} cargando={cargando} errorCarga={error || errorCategorias} />}
       />
       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-      <Route path="/admin/categorias" element={<AdminCategorias />} />
+      <Route path="/admin/categorias" element={<AdminCategorias alCambiar={recargar} />} />
       <Route path="/admin/ordenes" element={<AdminOrdenes />} />
       <Route path="/admin/reportes" element={<AdminReportes />} />
       <Route path="/admin/perfil" element={<AdminPerfil />} />
 
       {/* ---------------- 3. PANEL DE VENDEDOR ---------------- */}
-      <Route path="/vendedor/productos" element={<VendedorProductos />} />
+      <Route path="/vendedor/productos" element={<VendedorProductos productos={productos} cargando={cargando} error={error} />} />
       <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
     </Routes>
   );
