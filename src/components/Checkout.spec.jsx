@@ -1,3 +1,4 @@
+import { prepararSesion } from "../test/sesion";
 // src/components/Checkout.spec.jsx
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -18,6 +19,7 @@ describe("Checkout", () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("muestra advertencia y botón de retorno si el carrito está vacío", () => {
@@ -33,7 +35,7 @@ describe("Checkout", () => {
   });
 
   it("carga automáticamente los datos del usuario si hay sesión guardada en localStorage", () => {
-    localStorage.setItem("usuario_sesion", JSON.stringify({ nombre: "Carlos", correo: "carlos@duoc.cl" }));
+    prepararSesion("CLIENTE", { nombre: "Carlos", correo: "carlos@duoc.cl" });
     render(<Checkout carrito={carritoMock} />);
     expect(screen.getByLabelText("Nombre")).toHaveValue("Carlos");
     expect(screen.getByLabelText("Correo electrónico")).toHaveValue("carlos@duoc.cl");

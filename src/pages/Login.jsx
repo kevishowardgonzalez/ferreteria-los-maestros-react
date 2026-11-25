@@ -2,40 +2,37 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { iniciarSesion } from "../services/authService";
+import { useSesion } from "../hooks/useSesion";
+import { destinosPorRol } from "../utils/sesion";
+
 function Login() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  function manejarLogin(e) {
-    e.preventDefault();
-    const mail = correo.trim().toLowerCase();
+  const { activarSesion } = useSesion();
+  const [error, setError] = useState("");
+  const [ocupado, setOcupado] = useState(false);
 
-    if (password.length < 4 || password.length > 10) {
-      alert("La contraseña debe tener entre 4 y 10 caracteres.");
+  async function manejarLogin(e) {
+    e.preventDefault();
+    if (ocupado) return;
+    const mail = correo.trim().toLowerCase();
+    if (!mail || !password) {
+      setError("Ingresa tu correo y contraseña.");
       return;
     }
-
-    // 1. Rol ADMINISTRADOR -> Va a /admin
-    if (mail === "admin@duoc.cl" || mail.includes("admin")) {
-      const sesion = { correo: mail, nombre: "Kevis Howard", rol: "Administrador" };
-      localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
-      alert("Bienvenido Administrador");
-      navigate("/admin");
-    }
-    // 2. Rol VENDEDOR -> Va a /vendedor/productos
-    else if (mail === "vendedor@duoc.cl" || mail.includes("vendedor") || mail.includes("javier")) {
-      const sesion = { correo: mail, nombre: "Javier Cruz", rol: "Vendedor" };
-      localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
-      alert("Bienvenido Vendedor");
-      navigate("/vendedor/productos");
-    }
-    // 3. Rol CLIENTE -> Va a la tienda pública
-    else {
-      const sesion = { correo: mail, nombre: "Yerickson Rodríguez", rol: "Cliente" };
-      localStorage.setItem("usuario_sesion", JSON.stringify(sesion));
-      alert("Bienvenido a Ferretería Los Maestros");
-      navigate("/");
+    setOcupado(true);
+    setError("");
+    try {
+      const respuesta = await iniciarSesion({ correo: mail, password });
+      const usuario = activarSesion(respuesta);
+      navigate(destinosPorRol[usuario.rol], { replace: true });
+    } catch (error) {
+      setError(error.estado === 401 ? "Correo o contraseña incorrectos, o cuenta inactiva." : error.message);
+    } finally {
+      setOcupado(false);
     }
   }
 
@@ -43,31 +40,34 @@ function Login() {
     <main className="container py-5" style={{ maxWidth: "450px" }}>
       <div className="card p-4 shadow-sm border-0">
         <h1 className="h3 text-center mb-3 fw-bold">Iniciar Sesión</h1>
+        {error && <p className="alert alert-danger" role="alert">{error}</p>}
         <form onSubmit={manejarLogin}>
           <div className="mb-3">
-            <label className="form-label">Correo electrónico</label>
+            <label className="form-label" htmlFor="loginCorreo">Correo electrónico</label>
             <input
               type="email"
+              id="loginCorreo"
+              autoComplete="username"
               className="form-control"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
-              placeholder="admin@duoc.cl, vendedor@duoc.cl o usuario@gmail.com"
+              placeholder="nombre@ejemplo.cl"
               required
             />
           </div>
           <div className="mb-3">
-            <label className="form-label">Contraseña</label>
+            <label className="form-label" htmlFor="loginPassword">Contraseña</label>
             <input
               type="password"
+              id="loginPassword"
+              autoComplete="current-password"
               className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Entre 4 y 10 caracteres"
-              minLength={4}
               required
             />
           </div>
-          <button type="submit" className="btn btn-warning w-100 fw-bold">
+          <button type="submit" className="btn btn-warning w-100 fw-bold" disabled={ocupado}>
             Ingresar
           </button>
         </form>

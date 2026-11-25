@@ -3,19 +3,19 @@ import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import FormularioProducto from "./FormularioProducto";
 import { actualizarProducto, crearProducto, eliminarProducto as borrarProducto } from "../../services/productos";
-import { obtenerSesion } from "../../utils/persistencia";
+import { useSesion } from "../../hooks/useSesion";
 
 
-function AdminProductos({ productos = [], categorias = [], recargar, cargando, errorCarga, token }) {
+function AdminProductos({ productos = [], categorias = [], recargar, cargando, errorCarga }) {
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [productoAEditar, setProductoAEditar] = useState(null);
 
   const [error, setError] = useState("");
   const [ocupado, setOcupado] = useState(false);
-  const usuario = obtenerSesion();
-  const puedeEditar = ["ADMIN", "Administrador"].includes(usuario?.rol);
-  const credencial = token ?? usuario?.token;
+  const { usuario, rechazarCredencial } = useSesion();
+  const puedeEditar = usuario?.rol === "ADMIN";
+  const credencial = usuario?.token;
 
   async function guardarProducto(producto) {
     if (!puedeEditar || ocupado) return false;
@@ -30,6 +30,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
       recargar();
       return true;
     } catch (error) {
+      rechazarCredencial(error, credencial);
       setError(error.message);
       return false;
     } finally {
@@ -48,6 +49,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
       setMensaje("Producto eliminado correctamente.");
       recargar();
     } catch (error) {
+      rechazarCredencial(error, credencial);
       setError(error.message);
     } finally {
       setOcupado(false);

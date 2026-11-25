@@ -1,15 +1,16 @@
 // src/pages/admin/MenuAdmin.jsx
 import { NavLink, Link, useNavigate } from "react-router-dom";
 
+import { useSesion } from "../../hooks/useSesion";
+
 function MenuAdmin() {
   const navigate = useNavigate();
-  const sesionGuardada = localStorage.getItem("usuario_sesion");
-  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
-  const esVendedor = usuario?.rol === "Vendedor";
+  const { usuario, cerrarSesion } = useSesion();
+  const esVendedor = usuario?.rol === "VENDEDOR";
 
-  function cerrarSesion() {
-    localStorage.removeItem("usuario_sesion");
-    navigate("/login");
+  function salir() {
+    cerrarSesion();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -133,7 +134,7 @@ function MenuAdmin() {
         </Link>
         <button
           type="button"
-          onClick={cerrarSesion}
+          onClick={salir}
           className="btn btn-danger w-100 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 py-2"
         >
           <span>🚪</span> Cerrar Sesión

@@ -1,7 +1,10 @@
 // src/pages/vendedor/MenuVendedor.jsx
 import { NavLink, Link } from "react-router-dom";
 
+import { useSesion } from "../../hooks/useSesion";
+
 function MenuVendedor() {
+  const { cerrarSesion } = useSesion();
   return (
     <aside
       className="bg-white border-end p-3 d-flex flex-column h-100"
@@ -47,7 +50,8 @@ function MenuVendedor() {
         </Link>
         <Link
           to="/login"
-          onClick={() => localStorage.removeItem("usuario_sesion")}
+          replace
+          onClick={cerrarSesion}
           className="btn btn-danger w-100 rounded-2 fw-semibold py-2"
         >
           🚪 Cerrar Sesión

@@ -1,3 +1,5 @@
+import { sesionVigente } from "./sesion";
+
 // src/utils/persistencia.js
 
 // 1. Carrito (Guía 14, Sección 6)
@@ -11,17 +13,23 @@ export function obtenerCarrito() {
 }
 
 // 2. Sesión de Usuario
+const claveSesion = "usuario_sesion";
+
 export function obtenerSesion() {
-  const sesion = localStorage.getItem("usuario_sesion");
-  return sesion ? JSON.parse(sesion) : null;
+  try {
+    const usuario = JSON.parse(sessionStorage.getItem(claveSesion));
+    return sesionVigente(usuario) ? usuario : null;
+  } catch {
+    return null;
+  }
 }
 
-export function guardarSesion(usuario) {
-  localStorage.setItem("usuario_sesion", JSON.stringify(usuario));
+export function guardarSesion({ token, id, nombre, apellido, correo, rol }) {
+  sessionStorage.setItem(claveSesion, JSON.stringify({ token, id, nombre, apellido, correo, rol }));
 }
 
 export function cerrarSesionStorage() {
-  localStorage.removeItem("usuario_sesion");
+  sessionStorage.removeItem(claveSesion);
 }
 
 // 3. Historial de Órdenes del Cliente

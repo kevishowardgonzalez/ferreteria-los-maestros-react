@@ -1,113 +1,64 @@
-// src/pages/Login.spec.jsx
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import Login from "./Login";
+import SesionProvider from "../components/SesionProvider";
+import { respuestaSesion } from "../test/sesion";
+import { obtenerSesion } from "../utils/persistencia";
 
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", () => ({
-  useNavigate: () => mockNavigate,
-  Link: ({ children, to }) => <a href={to}>{children}</a>,
-}));
+afterEach(() => {
+  sessionStorage.clear();
+  vi.unstubAllGlobals();
+});
 
-describe("Login", () => {
-  beforeEach(() => {
-    mockNavigate.mockClear();
-    localStorage.clear();
-    vi.spyOn(window, "alert").mockImplementation(() => { });
-  });
+async function enviar(correo = "parece-admin@example.test") {
+  render(
+    <MemoryRouter initialEntries={["/login"]}>
+      <SesionProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<p>Panel administrativo</p>} />
+          <Route path="/vendedor/productos" element={<p>Panel vendedor</p>} />
+          <Route path="/" element={<p>Tienda pública</p>} />
+        </Routes>
+      </SesionProvider>
+    </MemoryRouter>,
+  );
+  const usuario = userEvent.setup();
+  await usuario.type(screen.getByLabelText("Correo electrónico"), correo);
+  await usuario.type(screen.getByLabelText("Contraseña"), "clave123");
+  await usuario.click(screen.getByRole("button", { name: "Ingresar" }));
+}
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+it.each([
+  ["ADMIN", "Panel administrativo"],
+  ["VENDEDOR", "Panel vendedor"],
+  ["CLIENTE", "Tienda pública"],
+])("envía las credenciales y usa el rol %s devuelto por Auth", async (rol, vista) => {
+  const respuesta = respuestaSesion(rol);
+  const fetchApi = vi.fn(async () => Response.json(respuesta));
+  vi.stubGlobal("fetch", fetchApi);
+  await enviar();
+  expect(await screen.findByText(vista)).toBeInTheDocument();
+  const [[url, solicitud]] = fetchApi.mock.calls;
+  expect(new URL(url).pathname).toBe("/api/v1/auth/login");
+  expect(solicitud.method).toBe("POST");
+  expect(JSON.parse(solicitud.body)).toEqual({ correo: "parece-admin@example.test", password: "clave123" });
+  expect(obtenerSesion()).toEqual(respuesta);
+  expect(sessionStorage.getItem("usuario_sesion")).not.toContain("clave123");
+});
 
-  it("renderiza los campos de entrada de correo y contraseña", () => {
-    render(<Login />);
-    expect(screen.getByPlaceholderText(/admin@duoc\.cl/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
-  });
+it("muestra el rechazo de credenciales sin crear sesión", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json({}, { status: 401 })));
+  await enviar();
+  expect(await screen.findByRole("alert")).toHaveTextContent("Correo o contraseña incorrectos");
+  expect(obtenerSesion()).toBeNull();
+});
 
-  it("actualiza el valor escrito en el formulario", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    const inputCorreo = screen.getByPlaceholderText(/admin@duoc\.cl/i);
-    const inputPass = screen.getByPlaceholderText(/entre 4 y 10 caracteres/i);
-
-    await usuario.type(inputCorreo, "admin@duoc.cl");
-    await usuario.type(inputPass, "12345");
-
-    expect(inputCorreo).toHaveValue("admin@duoc.cl");
-    expect(inputPass).toHaveValue("12345");
-  });
-
-  it("muestra alerta de error si la contraseña tiene menos de 4 caracteres", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "usuario@gmail.com");
-    await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "12");
-
-    await usuario.click(screen.getByRole("button", { name: /ingresar/i }));
-
-    expect(window.alert).toHaveBeenCalledWith("La contraseña debe tener entre 4 y 10 caracteres.");
-  });
-
-  it("muestra alerta de error si la contraseña supera los 10 caracteres", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "usuario@gmail.com");
-    await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "claveDemasiadoLarga123");
-
-    await usuario.click(screen.getByRole("button", { name: /ingresar/i }));
-
-    expect(window.alert).toHaveBeenCalledWith("La contraseña debe tener entre 4 y 10 caracteres.");
-  });
-
-  it("guarda la sesión con rol 'Administrador' al autenticar con admin@duoc.cl", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "admin@duoc.cl");
-    await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "12345");
-
-    await usuario.click(screen.getByRole("button", { name: /ingresar/i }));
-
-    const sesion = JSON.parse(localStorage.getItem("usuario_sesion"));
-    expect(sesion.rol).toBe("Administrador");
-    expect(sesion.correo).toBe("admin@duoc.cl");
-    expect(mockNavigate).toHaveBeenCalledWith("/admin");
-  });
-
-  it("guarda la sesión con rol 'Vendedor' al autenticar con vendedor@duoc.cl (Líneas 27-30)", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "vendedor@duoc.cl");
-    await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "12345");
-
-    await usuario.click(screen.getByRole("button", { name: /ingresar/i }));
-
-    const sesion = JSON.parse(localStorage.getItem("usuario_sesion"));
-    expect(sesion.rol).toBe("Vendedor");
-    expect(sesion.nombre).toBe("Javier Cruz");
-    expect(mockNavigate).toHaveBeenCalledWith("/vendedor/productos");
-  });
-
-  it("guarda la sesión con rol 'Cliente' cuando es un usuario general", async () => {
-    const usuario = userEvent.setup();
-    render(<Login />);
-
-    await usuario.type(screen.getByPlaceholderText(/admin@duoc\.cl/i), "comprador@gmail.com");
-    // Usamos contraseña válida de 6 caracteres (entre 4 y 10)
-    await usuario.type(screen.getByPlaceholderText(/entre 4 y 10 caracteres/i), "123456");
-
-    await usuario.click(screen.getByRole("button", { name: /ingresar/i }));
-
-    const sesion = JSON.parse(localStorage.getItem("usuario_sesion"));
-    expect(sesion.rol).toBe("Cliente");
-    expect(mockNavigate).toHaveBeenCalledWith("/");
-  });
+it("muestra el fallo de conexión y permite reintentar", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("sin conexión"); }));
+  await enviar();
+  expect(await screen.findByRole("alert")).toHaveTextContent("No fue posible conectar");
+  expect(screen.getByRole("button", { name: "Ingresar" })).toBeEnabled();
 });

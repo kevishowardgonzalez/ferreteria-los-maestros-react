@@ -3,12 +3,12 @@ import { useState } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-function PerfilCliente() {
-  const sesion = localStorage.getItem("usuario_sesion");
-  const usuario = sesion ? JSON.parse(sesion) : null;
+import { useSesion } from "../../hooks/useSesion";
 
-  const [nombre, setNombre] = useState(usuario?.nombre || "Yerickson Maestro");
-  const [correo] = useState(usuario?.correo || "yerickson@gmail.com");
+function PerfilCliente() {
+  const { usuario, actualizarNombre } = useSesion();
+  const [nombre, setNombre] = useState(usuario?.nombre ?? "");
+  const correo = usuario?.correo ?? "";
   const [telefono, setTelefono] = useState("+56 9 8765 4321");
   const [direccion, setDireccion] = useState("Av. Balmaceda 1234, Depto 402");
   const [comuna, setComuna] = useState("La Serena");
@@ -16,9 +16,8 @@ function PerfilCliente() {
 
   function guardarPerfil(e) {
     e.preventDefault();
-    const actualizado = { ...usuario, nombre };
-    localStorage.setItem("usuario_sesion", JSON.stringify(actualizado));
-    setMensaje("Tus datos personales y de envío han sido actualizados con éxito.");
+    actualizarNombre(nombre.trim());
+    setMensaje("Cambios aplicados en esta sesión.");
   }
 
   return (

@@ -3,14 +3,18 @@ import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import { Form, Button } from "react-bootstrap";
 
+import { useSesion } from "../../hooks/useSesion";
+
 function AdminPerfil() {
-  const [nombre, setNombre] = useState("Kevis Howard González");
-  const [correo] = useState("admin@duoc.cl");
+  const { usuario, actualizarNombre } = useSesion();
+  const [nombre, setNombre] = useState(usuario?.nombre ?? "");
+  const correo = usuario?.correo ?? "";
   const [cargo, setCargo] = useState("Administrador General");
 
   function guardar(e) {
     e.preventDefault();
-    alert("Perfil actualizado correctamente");
+    actualizarNombre(nombre.trim());
+    alert("Cambios aplicados en esta sesión.");
   }
 
   return (
