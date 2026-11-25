@@ -1,8 +1,7 @@
 // src/pages/vendedor/VendedorProductos.jsx
 import MenuVendedor from "./MenuVendedor";
-import { productos } from "../../data/productos";
 
-function VendedorProductos() {
+function VendedorProductos({ productos = [], cargando, error }) {
   const stockCritico = productos.filter((p) => p.stock <= 5).length;
 
   return (
@@ -31,6 +30,10 @@ function VendedorProductos() {
                 </tr>
               </thead>
               <tbody>
+                {(cargando || error || productos.length === 0) && (
+                  <tr><td colSpan={5}>{cargando ? <span role="status">Cargando productos...</span> :
+                    error ? <span role="alert">{error}</span> : "No hay productos."}</td></tr>
+                )}
                 {productos.map((prod) => (
                   <tr key={prod.id}>
                     <td className="fw-semibold">{prod.nombre}</td>

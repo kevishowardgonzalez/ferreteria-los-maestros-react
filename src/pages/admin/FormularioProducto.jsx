@@ -2,16 +2,16 @@
 import { useState, useEffect } from "react";
 import { Button, Form } from "react-bootstrap";
 
-const inicial = { nombre: "", categoria: "", precio: "", stock: "" };
+const inicial = { nombre: "", categoria: "", precio: "", stock: "", descripcion: "" };
 
-function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
+function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion, categorias, ocupado }) {
   const [datos, setDatos] = useState(inicial);
   const [errores, setErrores] = useState({});
 
   // Carga los datos en el formulario si se presiona "Editar"
   useEffect(() => {
     if (productoAEditar) {
-      setDatos(productoAEditar);
+      setDatos({ ...productoAEditar, descripcion: productoAEditar.descripcion ?? "" });
     } else {
       setDatos(inicial);
     }
@@ -22,27 +22,27 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
     setDatos({ ...datos, [name]: value });
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault();
     const nuevosErrores = {};
 
     if (!datos.nombre.trim()) nuevosErrores.nombre = "Nombre obligatorio";
     if (!datos.categoria) nuevosErrores.categoria = "Selecciona categoría";
-    if (Number(datos.precio) <= 0) nuevosErrores.precio = "Precio debe ser mayor a 0";
-    if (Number(datos.stock) < 0) nuevosErrores.stock = "El stock no puede ser negativo";
+    if (datos.precio === "" || !Number.isFinite(Number(datos.precio)) || Number(datos.precio) < 0) nuevosErrores.precio = "Ingresa un precio no negativo";
+    if (datos.stock === "" || !Number.isInteger(Number(datos.stock)) || Number(datos.stock) < 0) nuevosErrores.stock = "Ingresa un stock entero no negativo";
 
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
 
-    onGuardar({
-      ...datos,
-      id: datos.id || Date.now(),
+    const guardado = await onGuardar({
+      nombre: datos.nombre.trim(),
+      categoria: datos.categoria,
       precio: Number(datos.precio),
       stock: Number(datos.stock),
-      descripcion: datos.descripcion || "Ingresado desde panel de administración"
+      descripcion: datos.descripcion.trim(),
     });
 
-    setDatos(inicial);
+    if (guardado) setDatos(inicial);
   }
 
   return (
@@ -51,6 +51,7 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
         <Form.Label>Nombre del producto</Form.Label>
         <Form.Control
           name="nombre"
+          maxLength={100}
           value={datos.nombre}
           onChange={cambiar}
           isInvalid={Boolean(errores.nombre)}
@@ -70,12 +71,10 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
           isInvalid={Boolean(errores.categoria)}
         >
           <option value="">Selecciona categoría</option>
-          <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-          <option value="Construcción">Construcción</option>
-          <option value="Herramientas Manuales">Herramientas Manuales</option>
-          <option value="Gasfitería">Gasfitería</option>
-          <option value="Pinturas">Pinturas</option>
-          <option value="Electricidad">Electricidad</option>
+          {productoAEditar?.categoria && !categorias.some(({ nombre }) => nombre === productoAEditar.categoria) && (
+            <option value={productoAEditar.categoria}>{productoAEditar.categoria}</option>
+          )}
+          {categorias.map(({ id, nombre }) => <option key={id} value={nombre}>{nombre}</option>)}
         </Form.Select>
         <Form.Control.Feedback type="invalid">
           {errores.categoria}
@@ -87,6 +86,7 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
         <Form.Control
           type="number"
           name="precio"
+          step="0.01"
           min="0"
           value={datos.precio}
           onChange={cambiar}
@@ -114,12 +114,16 @@ function FormularioProducto({ onGuardar, productoAEditar, onCancelarEdicion }) {
         </Form.Control.Feedback>
       </Form.Group>
 
+      <Form.Group className="mb-3" controlId="formDescripcion">
+        <Form.Label>Descripción</Form.Label>
+        <Form.Control as="textarea" name="descripcion" maxLength={1000} value={datos.descripcion} onChange={cambiar} />
+      </Form.Group>
       <div className="d-flex gap-2">
-        <Button type="submit" variant="warning" className="fw-bold">
+        <Button disabled={ocupado} type="submit" variant="warning" className="fw-bold">
           {productoAEditar ? "Actualizar Producto" : "Guardar Producto"}
         </Button>
         {productoAEditar && (
-          <Button type="button" variant="secondary" onClick={onCancelarEdicion}>
+          <Button disabled={ocupado} type="button" variant="secondary" onClick={onCancelarEdicion}>
             Cancelar
           </Button>
         )}

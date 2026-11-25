@@ -2,65 +2,57 @@
 import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
 import FormularioProducto from "./FormularioProducto";
+import { actualizarProducto, crearProducto, eliminarProducto as borrarProducto } from "../../services/productos";
+import { obtenerSesion } from "../../utils/persistencia";
 
 
-function AdminProductos({ productos, setProductos }) {
+function AdminProductos({ productos = [], categorias = [], recargar, cargando, errorCarga, token }) {
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [productoAEditar, setProductoAEditar] = useState(null);
 
-  const sesionGuardada = localStorage.getItem("usuario_sesion");
-  const usuario = sesionGuardada ? JSON.parse(sesionGuardada) : null;
-  const esVendedor = usuario?.rol === "Vendedor";
+  const [error, setError] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+  const usuario = obtenerSesion();
+  const puedeEditar = ["ADMIN", "Administrador"].includes(usuario?.rol);
+  const credencial = token ?? usuario?.token;
 
-  // AGREGAR O ACTUALIZAR (EDITAR)
-  // AGREGAR O ACTUALIZAR PRODUCTO
-// AGREGAR O ACTUALIZAR PRODUCTO
-function guardarProducto(producto) {
-  if (productoAEditar) {
-    // Actualizar un producto existente
-    setProductos((anteriores) =>
-      anteriores.map((item) =>
-        item.id === producto.id ? producto : item
-      )
-    );
-
-    setMensaje(
-      `Producto "${producto.nombre}" actualizado con éxito.`
-    );
-
-    setProductoAEditar(null);
-  } else {
-    // Agregar un producto nuevo
-    setProductos((anteriores) => [
-      ...anteriores,
-      producto
-    ]);
-
-    setMensaje(
-      `Producto "${producto.nombre}" registrado con éxito.`
-    );
-  }
-}
-
-// ELIMINAR PRODUCTO
-function eliminarProducto(id) {
-  if (
-    window.confirm(
-      "¿Seguro que deseas eliminar este producto del inventario?"
-    )
-  ) {
-    setProductos((anteriores) =>
-      anteriores.filter((item) => item.id !== id)
-    );
-
-    if (productoAEditar?.id === id) {
+  async function guardarProducto(producto) {
+    if (!puedeEditar || ocupado) return false;
+    setOcupado(true);
+    setError("");
+    setMensaje("");
+    try {
+      if (productoAEditar) await actualizarProducto(productoAEditar.id, producto, credencial);
+      else await crearProducto(producto, credencial);
+      setMensaje(`Producto "${producto.nombre}" ${productoAEditar ? "actualizado" : "registrado"} con éxito.`);
       setProductoAEditar(null);
+      recargar();
+      return true;
+    } catch (error) {
+      setError(error.message);
+      return false;
+    } finally {
+      setOcupado(false);
     }
-
-    setMensaje("Producto eliminado correctamente.");
   }
-}
+
+  async function eliminarProducto(id) {
+    if (!puedeEditar || ocupado || !window.confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
+    setOcupado(true);
+    setError("");
+    setMensaje("");
+    try {
+      await borrarProducto(id, credencial);
+      if (productoAEditar?.id === id) setProductoAEditar(null);
+      setMensaje("Producto eliminado correctamente.");
+      recargar();
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setOcupado(false);
+    }
+  }
 
   // CONSULTAR DETALLE
   function verDetalle(prod) {
@@ -95,7 +87,7 @@ function eliminarProducto(id) {
           <div>
             <h1 className="h4 fw-bold mb-1">Inventario y Catálogo de Productos</h1>
             <p className="text-muted mb-0 small">
-              {esVendedor
+              {!puedeEditar
                 ? "Vista de consulta para equipo de ventas."
                 : "Gestión completa: agregar, editar, consultar y eliminar existencias."}
             </p>
@@ -122,11 +114,13 @@ function eliminarProducto(id) {
           <div className="col-12 col-md-4">
             <div className="card shadow-sm border-0 p-3 bg-white h-100">
               <span className="text-muted small">Categorías Activas</span>
-              <p className="fs-3 fw-bold mb-0 text-success">6</p>
+              <p className="fs-3 fw-bold mb-0 text-success">{categorias.length}</p>
             </div>
           </div>
         </div>
 
+        {(error || errorCarga) && <p role="alert">{error || errorCarga}</p>}
+        {cargando && <p role="status">Cargando productos...</p>}
         {mensaje && (
           <div className="alert alert-success alert-dismissible fade show py-2" role="alert">
             {mensaje}
@@ -140,12 +134,14 @@ function eliminarProducto(id) {
         )}
 
         {/* Formulario (Crear / Editar) solo visible para Administrador */}
-        {!esVendedor && (
+        {puedeEditar && (
           <section className="card shadow-sm border-0 p-4 mb-4 bg-white">
             <h2 className="h5 fw-bold mb-3">
               {productoAEditar ? `Editar Producto: ${productoAEditar.nombre}` : "Registrar Nuevo Producto"}
             </h2>
             <FormularioProducto
+              categorias={categorias}
+              ocupado={ocupado}
               onGuardar={guardarProducto}
               productoAEditar={productoAEditar}
               onCancelarEdicion={() => setProductoAEditar(null)}
@@ -214,7 +210,7 @@ function eliminarProducto(id) {
                           </button>
 
                           {/* EDITAR (Solo Admin) */}
-                          {!esVendedor && (
+                          {puedeEditar && (
                             <button
                               type="button"
                               onClick={() => {
@@ -223,18 +219,20 @@ function eliminarProducto(id) {
                               }}
                               className="btn btn-outline-warning btn-sm"
                               title="Editar producto"
+                              disabled={ocupado}
                             >
                               ✏️
                             </button>
                           )}
 
                           {/* ELIMINAR (Solo Admin) */}
-                          {!esVendedor ? (
+                          {puedeEditar ? (
                             <button
                               type="button"
                               onClick={() => eliminarProducto(prod.id)}
                               className="btn btn-outline-danger btn-sm"
                               title="Eliminar producto"
+                              disabled={ocupado}
                             >
                               🗑️
                             </button>
