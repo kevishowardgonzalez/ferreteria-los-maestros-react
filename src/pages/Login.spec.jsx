@@ -8,7 +8,7 @@ import { respuestaSesion } from "../test/sesion";
 import { obtenerSesion } from "../utils/persistencia";
 
 afterEach(() => {
-  sessionStorage.clear();
+  localStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -46,7 +46,7 @@ it.each([
   expect(solicitud.method).toBe("POST");
   expect(JSON.parse(solicitud.body)).toEqual({ correo: "parece-admin@example.test", password: "clave123" });
   expect(obtenerSesion()).toEqual(respuesta);
-  expect(sessionStorage.getItem("usuario_sesion")).not.toContain("clave123");
+  expect(localStorage.getItem("usuario_sesion")).not.toContain("clave123");
 });
 
 it("muestra el rechazo de credenciales sin crear sesión", async () => {

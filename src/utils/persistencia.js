@@ -17,7 +17,7 @@ const claveSesion = "usuario_sesion";
 
 export function obtenerSesion() {
   try {
-    const usuario = JSON.parse(sessionStorage.getItem(claveSesion));
+    const usuario = JSON.parse(localStorage.getItem(claveSesion));
     return sesionVigente(usuario) ? usuario : null;
   } catch {
     return null;
@@ -25,11 +25,11 @@ export function obtenerSesion() {
 }
 
 export function guardarSesion({ token, id, nombre, apellido, correo, rol }) {
-  sessionStorage.setItem(claveSesion, JSON.stringify({ token, id, nombre, apellido, correo, rol }));
+  localStorage.setItem(claveSesion, JSON.stringify({ token, id, nombre, apellido, correo, rol }));
 }
 
 export function cerrarSesionStorage() {
-  sessionStorage.removeItem(claveSesion);
+  localStorage.removeItem(claveSesion);
 }
 
 // 3. Historial de Órdenes del Cliente
