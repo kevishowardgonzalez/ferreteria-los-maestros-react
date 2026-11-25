@@ -7,7 +7,7 @@ import App from "../App";
 
 afterEach(() => {
   localStorage.clear();
-  sessionStorage.clear();
+  localStorage.clear();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -105,11 +105,11 @@ it("redirige al vendedor que intenta entrar al mantenedor de escritura", async (
 });
 
 it("descarta una sesión vencida, aunque esté guardada", async () => {
-  sessionStorage.setItem("usuario_sesion", JSON.stringify(respuestaSesion("ADMIN", {}, 1)));
+  localStorage.setItem("usuario_sesion", JSON.stringify(respuestaSesion("ADMIN", {}, 1)));
   vi.stubGlobal("fetch", vi.fn(async () => Response.json([])));
   render(<MemoryRouter initialEntries={["/admin/categorias"]}><App /></MemoryRouter>);
   expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
-  expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+  expect(localStorage.getItem("usuario_sesion")).toBeNull();
 });
 
 it("cierra la sesión local desde el menú del vendedor", async () => {
@@ -118,7 +118,7 @@ it("cierra la sesión local desde el menú del vendedor", async () => {
   render(<MemoryRouter initialEntries={["/vendedor/productos"]}><App /></MemoryRouter>);
   await userEvent.click(screen.getByRole("link", { name: /cerrar sesión/i }));
   expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
-  expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+  expect(localStorage.getItem("usuario_sesion")).toBeNull();
 });
 
 it.each([401, 403])("distingue un HTTP %s en categorías administrativas", async (estado) => {
@@ -129,9 +129,9 @@ it.each([401, 403])("distingue un HTTP %s en categorías administrativas", async
   render(<MemoryRouter initialEntries={["/admin/categorias"]}><App /></MemoryRouter>);
   if (estado === 401) {
     expect(await screen.findByRole("heading", { name: "Iniciar Sesión" })).toBeInTheDocument();
-    expect(sessionStorage.getItem("usuario_sesion")).toBeNull();
+    expect(localStorage.getItem("usuario_sesion")).toBeNull();
   } else {
     expect(await screen.findByText("Solicitud rechazada")).toBeInTheDocument();
-    expect(sessionStorage.getItem("usuario_sesion")).not.toBeNull();
+    expect(localStorage.getItem("usuario_sesion")).not.toBeNull();
   }
 });
