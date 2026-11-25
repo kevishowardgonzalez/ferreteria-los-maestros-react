@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { renovarSesion } from "../services/authService";
-import { cerrarSesionStorage, guardarSesion, obtenerSesionGuardada, vencimientoToken } from "../utils/persistencia";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { renovarSesion, revocarSesion } from "../services/authService";
+import { cerrarSesionStorage, guardarSesion, leerSesionGuardada, obtenerSesionGuardada, vencimientoToken } from "../utils/persistencia";
 
 const SesionContext = createContext(null);
 
@@ -15,27 +15,55 @@ export function useSesion() {
 }
 
 function adaptarSesion(respuesta) {
-  const { token, id, nombre, apellido, correo, rol } = respuesta ?? {};
+  const { token, refreshToken, id, nombre, apellido, correo, rol } = respuesta ?? {};
   if (!Object.hasOwn(etiquetasRol, rol) || !correo || vencimientoToken(token) <= Date.now()) {
     throw new Error("El servicio devolvió una sesión inválida.");
   }
-  return { token, usuario: { id, nombre, apellido, correo, rol } };
+  return { token, refreshToken, usuario: { id, nombre, apellido, correo, rol } };
 }
 
 export default function SesionProvider({ children }) {
-  const [sesion, setSesion] = useState(obtenerSesionGuardada);
+  const [sesion, setSesion] = useState(() => {
+    const guardada = leerSesionGuardada();
+    return guardada?.refreshToken ? guardada : obtenerSesionGuardada();
+  });
+  const vigente = sesion && vencimientoToken(sesion.token) > Date.now();
   const token = sesion?.token;
+  const [avisoLogout, setAvisoLogout] = useState("");
+  const operacionLogout = useRef(0);
 
   function activarSesion(respuesta) {
     const nueva = adaptarSesion(respuesta);
+    operacionLogout.current += 1;
+    setAvisoLogout("");
     guardarSesion(nueva);
     setSesion(nueva);
     return nueva.usuario;
   }
 
-  function cerrarSesion() {
+  function limpiarSesion() {
     cerrarSesionStorage();
     setSesion(null);
+  }
+
+  async function cerrarSesion() {
+    const refreshToken = leerSesionGuardada()?.refreshToken;
+    const operacion = ++operacionLogout.current;
+    limpiarSesion();
+    if (!refreshToken) {
+      setAvisoLogout("");
+      return;
+    }
+
+    setAvisoLogout("Sesión local cerrada. Confirmando la revocación en el servidor…");
+    try {
+      await revocarSesion(refreshToken);
+      if (operacion === operacionLogout.current) setAvisoLogout("");
+    } catch {
+      if (operacion === operacionLogout.current) {
+        setAvisoLogout("Sesión local cerrada. No se pudo confirmar la revocación en el servidor.");
+      }
+    }
   }
 
   function actualizarNombre(nombre) {
@@ -52,32 +80,41 @@ export default function SesionProvider({ children }) {
       return;
     }
 
+    const refreshToken = sesion.refreshToken;
     const restante = Math.max(0, vencimientoToken(token) - Date.now());
     const controlador = new AbortController();
-    const sigueActiva = () => !controlador.signal.aborted && obtenerSesionGuardada()?.token === token;
-    const caducidad = setTimeout(() => {
-      if (!controlador.signal.aborted && !obtenerSesionGuardada()) cerrarSesion();
-    }, restante);
-
-    const renovacion = setTimeout(async () => {
+    const sigueActiva = () => {
+      const actual = leerSesionGuardada();
+      return !controlador.signal.aborted && actual?.token === token &&
+        actual?.refreshToken === refreshToken;
+    };
+    const caducidad = restante > 0 || !refreshToken
+      ? setTimeout(() => {
+          if (sigueActiva()) limpiarSesion();
+        }, restante)
+      : null;
+    const renovacion = refreshToken ? setTimeout(async () => {
       if (!sigueActiva()) return;
       try {
-        const respuesta = await renovarSesion(controlador.signal);
+        const respuesta = await renovarSesion(refreshToken, controlador.signal);
         if (sigueActiva()) activarSesion(respuesta);
       } catch (error) {
-        if (sigueActiva() && [400, 401, 403, 404].includes(error.status)) cerrarSesion();
+        if (sigueActiva() && (restante === 0 || [400, 401, 403].includes(error.status))) {
+          limpiarSesion();
+        }
       }
-    }, restante - Math.min(60_000, Math.floor(restante / 2)));
+    }, restante - Math.min(60_000, Math.floor(restante / 2))) : null;
 
     return () => {
       controlador.abort();
       clearTimeout(caducidad);
       clearTimeout(renovacion);
     };
-  }, [token]);
+  }, [token, sesion?.refreshToken]);
 
   return (
-    <SesionContext.Provider value={{ usuario: sesion?.usuario ?? null, activarSesion, cerrarSesion, actualizarNombre }}>
+    <SesionContext.Provider value={{ usuario: vigente ? sesion.usuario : null, restaurando: Boolean(sesion?.refreshToken && !vigente), activarSesion, cerrarSesion, actualizarNombre }}>
+      {avisoLogout && <p className="alert alert-warning mb-0" role="status">{avisoLogout}</p>}
       {children}
     </SesionContext.Provider>
   );

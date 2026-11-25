@@ -58,8 +58,8 @@ describe("Login", () => {
       body: JSON.stringify({ correo: "cuenta@ejemplo.cl", password: "dato-de-prueba" }),
     });
     expect(navegar).toHaveBeenCalledWith(ruta, { replace: true });
-    const { token, ...usuario } = datos;
-    expect(JSON.parse(sessionStorage.getItem("usuario_sesion"))).toEqual({ token, usuario });
+    const { token, refreshToken, ...usuario } = datos;
+    expect(JSON.parse(sessionStorage.getItem("usuario_sesion"))).toEqual({ token, refreshToken, usuario });
     expect(localStorage.getItem("usuario_sesion")).toBeNull();
   });
 

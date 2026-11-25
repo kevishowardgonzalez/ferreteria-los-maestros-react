@@ -1,5 +1,3 @@
-import { encabezadosAutorizados } from "./encabezadosAutorizados";
-
 async function solicitarAuth(ruta, opciones) {
   const url = import.meta.env.VITE_AUTH_API_URL?.replace(/\/+$/, "");
   if (!url) throw new Error("Falta configurar VITE_AUTH_API_URL.");
@@ -13,7 +11,7 @@ async function solicitarAuth(ruta, opciones) {
 
   const datos = await respuesta.json().catch(() => null);
   if (!respuesta.ok) {
-    const error = new Error(datos?.mensaje || `La solicitud de autenticación falló (HTTP ${respuesta.status}).`);
+    const error = new Error(datos?.mensaje || datos?.error || `La solicitud de autenticación falló (HTTP ${respuesta.status}).`);
     error.status = respuesta.status;
     throw error;
   }
@@ -35,6 +33,18 @@ export async function registrarCliente(datos) {
   });
 }
 
-export async function renovarSesion(signal) {
-  return solicitarAuth("refresh", { headers: encabezadosAutorizados(), signal });
+export function renovarSesion(refreshToken, signal) {
+  return solicitarAuth("refresh", {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+    signal,
+  });
+}
+
+export function revocarSesion(refreshToken) {
+  return solicitarAuth("logout", {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+    signal: AbortSignal.timeout(5_000),
+  });
 }

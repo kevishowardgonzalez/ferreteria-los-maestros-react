@@ -27,13 +27,18 @@ export function vencimientoToken(token) {
   }
 }
 
-export function obtenerSesionGuardada() {
+export function leerSesionGuardada() {
   try {
     const sesion = JSON.parse(sessionStorage.getItem("usuario_sesion"));
-    return sesion?.usuario && vencimientoToken(sesion.token) > Date.now() ? sesion : null;
+    return sesion?.usuario && vencimientoToken(sesion.token) ? sesion : null;
   } catch {
     return null;
   }
+}
+
+export function obtenerSesionGuardada() {
+  const sesion = leerSesionGuardada();
+  return sesion && vencimientoToken(sesion.token) > Date.now() ? sesion : null;
 }
 
 export function guardarSesion(sesion) {
