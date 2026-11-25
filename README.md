@@ -129,6 +129,36 @@ El sistema contempla los siguientes roles:
 * **Vendedor:** Gestión relacionada con ventas e inventario.
 * **Cliente:** Acceso a la tienda, productos y carrito de compras.
 
+## Despliegue en AWS
+
+La aplicación Ferretería Los Maestros se desplegó en
+Amazon EC2 utilizando Ubuntu y Nginx.
+
+### Tecnologías
+- React + Vite
+- AWS EC2
+- Ubuntu Server
+- Nginx
+- SSH y SCP
+
+### Pasos principales
+1. Ejecutar `npm run build`.
+2. Crear una instancia EC2 con Ubuntu.
+3. Configurar los puertos SSH (22) y HTTP (80).
+4. Instalar Nginx en Ubuntu.
+5. Copiar la carpeta `dist` al servidor.
+6. Publicar los archivos en `/var/www/ferreteria-los-maestros`.
+7. Activar la configuración de `deploy/nginx.conf`.
+8. Verificar el sitio y las rutas de React Router.
+
+### Verificación
+- Build de producción exitoso.
+- Sitio publicado mediante AWS EC2 y Nginx.
+- Pruebas unitarias: 36 aprobadas.
+
+Nota: La dirección IP pública puede cambiar al reiniciar EC2.
+
+
 ---
 
 ## 👨‍💻 Proyecto Académico
@@ -138,3 +168,4 @@ El sistema contempla los siguientes roles:
 **Institución:** Duoc UC
 
 **Proyecto:** Ferretería Los Maestros
+

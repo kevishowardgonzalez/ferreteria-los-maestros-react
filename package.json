@@ -12,16 +12,17 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "20": "^3.1.9",
     "bootstrap": "^5.3.8",
-    "react": "^19.2.8",
+    "react": "^19.3.0",
     "react-bootstrap": "^2.10.10",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
