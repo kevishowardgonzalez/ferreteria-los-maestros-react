@@ -65,7 +65,7 @@ function RutasApp() {
   // Estado y filtros de inventario gestionados por el Hook
   const {
     productos,
-    categorias, cargando, error, errorCategorias, recargar,
+    categorias, cargando, error, errorCategorias, recargar, revision,
     categoria,
     setCategoria,
     visibles,
@@ -122,7 +122,7 @@ function RutasApp() {
                 </div>
               </div>
               {errorCategorias && <p role="alert">{errorCategorias}</p>}
-              <Catalogo productos={visibles} onAgregar={agregarAlCarrito} cargando={cargando} error={error} />
+              <Catalogo revision={revision} productos={visibles} onAgregar={agregarAlCarrito} cargando={cargando} error={error} />
             </main>
           }
         />
@@ -173,7 +173,7 @@ function RutasApp() {
         <Route path="/admin" element={<HomeAdmin />} />
         <Route
           path="/admin/productos"
-          element={<AdminProductos productos={productos} categorias={categorias} recargar={recargar} cargando={cargando} errorCarga={error || errorCategorias} />}
+          element={<AdminProductos revision={revision} productos={productos} categorias={categorias} recargar={recargar} cargando={cargando} errorCarga={error || errorCategorias} />}
         />
         <Route path="/admin/usuarios" element={<AdminUsuarios />} />
         <Route path="/admin/categorias" element={<AdminCategorias alCambiar={recargar} />} />
@@ -184,7 +184,7 @@ function RutasApp() {
 
       {/* ---------------- 3. PANEL DE VENDEDOR ---------------- */}
       <Route element={<RutaProtegida rol="VENDEDOR" />}>
-        <Route path="/vendedor/productos" element={<VendedorProductos productos={productos} cargando={cargando} error={error} />} />
+        <Route path="/vendedor/productos" element={<VendedorProductos revision={revision} productos={productos} cargando={cargando} error={error} />} />
         <Route path="/vendedor/ordenes" element={<VendedorOrdenes />} />
       </Route>
 

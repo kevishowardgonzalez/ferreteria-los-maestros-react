@@ -37,5 +37,5 @@ export function useProductos() {
 
   const visibles = categoria === "Todas" ? productos : productos.filter((item) => item.categoria === categoria);
   const recargar = () => setRevision((actual) => actual + 1);
-  return { productos, categorias, categoria, setCategoria, visibles, cargando, error, errorCategorias, recargar };
+  return { productos, categorias, categoria, setCategoria, visibles, cargando, error, errorCategorias, recargar, revision };
 }

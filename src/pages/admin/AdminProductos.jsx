@@ -1,3 +1,7 @@
+import ControlInventario from "./ControlInventario";
+import { useInventario } from "../../hooks/useInventario";
+import { consultarExistencias, registrarFicha } from "../../services/inventario";
+import { textoExistencias, stockCritico as esCritico } from "../../utils/existencias";
 // src/pages/admin/AdminProductos.jsx
 import { useState } from "react";
 import MenuAdmin from "./MenuAdmin";
@@ -6,7 +10,7 @@ import { actualizarProducto, crearProducto, eliminarProducto as borrarProducto }
 import { useSesion } from "../../hooks/useSesion";
 
 
-function AdminProductos({ productos = [], categorias = [], recargar, cargando, errorCarga }) {
+function AdminProductos({ productos = [], categorias = [], recargar, cargando, errorCarga, revision }) {
   const [mensaje, setMensaje] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [productoAEditar, setProductoAEditar] = useState(null);
@@ -16,22 +20,49 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
   const { usuario, rechazarCredencial } = useSesion();
   const puedeEditar = usuario?.rol === "ADMIN";
   const credencial = usuario?.token;
+  const { fichas, estado } = useInventario(revision);
+  const porProducto = new Map(fichas?.map((f) => [f.productoId, f]));
+  const [altaIncierta, setAltaIncierta] = useState(false);
 
   async function guardarProducto(producto) {
-    if (!puedeEditar || ocupado) return false;
+    if (!puedeEditar || ocupado || (!productoAEditar && altaIncierta)) return false;
     setOcupado(true);
     setError("");
     setMensaje("");
     try {
-      if (productoAEditar) await actualizarProducto(productoAEditar.id, producto, credencial);
-      else await crearProducto(producto, credencial);
-      setMensaje(`Producto "${producto.nombre}" ${productoAEditar ? "actualizado" : "registrado"} con éxito.`);
+      if (productoAEditar) {
+        await actualizarProducto(productoAEditar.id, producto, credencial);
+        setMensaje("Información comercial actualizada.");
+      } else {
+        const nuevo = await crearProducto({ ...producto, stock: 0 }, credencial);
+        if (!nuevo?.id) throw new Error("Alta incierta: verifica el catálogo antes de reintentar.");
+        try {
+          await registrarFicha(nuevo, producto.stock, credencial);
+          setMensaje("Producto e inventario registrados.");
+        } catch (errorFicha) {
+          rechazarCredencial(errorFicha, credencial);
+          try {
+            await consultarExistencias(nuevo.id);
+            setMensaje("Producto registrado y ficha recuperada.");
+          } catch (consulta) {
+            setError(consulta.estado === 404
+              ? "Producto #" + nuevo.id + " creado con inventario pendiente. Completa la ficha en Existencias y movimientos. " + errorFicha.message
+              : "Producto #" + nuevo.id + " creado. La ficha no pudo comprobarse; consulta Existencias y movimientos antes de reintentar.");
+          }
+        }
+      }
       setProductoAEditar(null);
       recargar();
       return true;
     } catch (error) {
       rechazarCredencial(error, credencial);
-      setError(error.message);
+      if (!productoAEditar && (!error.estado || error.estado >= 500)) {
+        setAltaIncierta(true);
+        setError("Alta comercial incierta. Verifica si el producto existe antes de repetirla.");
+        recargar();
+      } else {
+        setError(error.message);
+      }
       return false;
     } finally {
       setOcupado(false);
@@ -39,14 +70,14 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
   }
 
   async function eliminarProducto(id) {
-    if (!puedeEditar || ocupado || !window.confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
+    if (!puedeEditar || ocupado || !window.confirm("¿Retirar este producto del catálogo? Se conservará su historial.")) return;
     setOcupado(true);
     setError("");
     setMensaje("");
     try {
       await borrarProducto(id, credencial);
       if (productoAEditar?.id === id) setProductoAEditar(null);
-      setMensaje("Producto eliminado correctamente.");
+      setMensaje("Producto retirado del catálogo.");
       recargar();
     } catch (error) {
       rechazarCredencial(error, credencial);
@@ -64,7 +95,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
       `Nombre: ${prod.nombre}\n` +
       `Categoría: ${prod.categoria}\n` +
       `Precio: $${prod.precio.toLocaleString("es-CL")}\n` +
-      `Stock Disponible: ${prod.stock} unidades\n` +
+      `Stock disponible: ${textoExistencias(estado, porProducto.get(prod.id))}\n` +
       `Descripción: ${prod.descripcion || "Sin descripción adicional"}`
     );
   }
@@ -76,7 +107,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
       item.categoria.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const stockCritico = productos.filter((prod) => prod.stock <= 5).length;
+  const stockCritico = productos.filter((prod) => esCritico(porProducto.get(prod.id))).length;
 
   return (
     <div className="d-flex min-vh-100 bg-light w-100">
@@ -109,7 +140,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
           </div>
           <div className="col-12 col-md-4">
             <div className="card shadow-sm border-0 p-3 bg-white border-start border-danger border-4 h-100">
-              <span className="text-danger small">Stock Crítico (≤ 5 unidades)</span>
+              <span className="text-danger small">Stock crítico según mínimo</span>
               <p className="fs-3 fw-bold mb-0 text-danger">{stockCritico}</p>
             </div>
           </div>
@@ -141,15 +172,19 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
             <h2 className="h5 fw-bold mb-3">
               {productoAEditar ? `Editar Producto: ${productoAEditar.nombre}` : "Registrar Nuevo Producto"}
             </h2>
+            {altaIncierta && <button type="button" className="btn btn-outline-secondary mb-2" onClick={() => setAltaIncierta(false)}>Ya verifiqué el catálogo</button>}
             <FormularioProducto
               categorias={categorias}
-              ocupado={ocupado}
+              ocupado={ocupado || (!productoAEditar && altaIncierta)}
               onGuardar={guardarProducto}
               productoAEditar={productoAEditar}
               onCancelarEdicion={() => setProductoAEditar(null)}
             />
           </section>
         )}
+
+        {puedeEditar && <ControlInventario productos={productos} fichas={fichas} estado={estado}
+          token={credencial} recargar={recargar} rechazarCredencial={rechazarCredencial} />}
 
         {/* Listado y Búsqueda de Productos */}
         <section className="card shadow-sm border-0 p-4 bg-white">
@@ -191,9 +226,9 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
                       <td className="fw-semibold">{prod.nombre}</td>
                       <td>{prod.categoria}</td>
                       <td>${prod.precio.toLocaleString("es-CL")}</td>
-                      <td>{prod.stock}</td>
+                      <td>{textoExistencias(estado, porProducto.get(prod.id))}</td>
                       <td>
-                        {prod.stock <= 5 ? (
+                        {!porProducto.has(prod.id) ? "—" : esCritico(porProducto.get(prod.id)) ? (
                           <span className="badge bg-danger">Crítico</span>
                         ) : (
                           <span className="badge bg-success">Normal</span>
@@ -233,7 +268,7 @@ function AdminProductos({ productos = [], categorias = [], recargar, cargando, e
                               type="button"
                               onClick={() => eliminarProducto(prod.id)}
                               className="btn btn-outline-danger btn-sm"
-                              title="Eliminar producto"
+                              title="Retirar producto"
                               disabled={ocupado}
                             >
                               🗑️

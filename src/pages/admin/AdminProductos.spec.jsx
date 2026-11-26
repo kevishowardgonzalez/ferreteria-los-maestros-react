@@ -2,7 +2,7 @@ import SesionProvider from "../../components/SesionProvider";
 import { prepararSesion } from "../../test/sesion";
 // src/pages/admin/AdminProductos.spec.jsx
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render as renderReact, screen } from "@testing-library/react";
+import { render as renderReact, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminProductos from "./AdminProductos";
 
@@ -13,6 +13,12 @@ const api = vi.hoisted(() => ({
   eliminarProducto: vi.fn(),
 }));
 vi.mock("../../services/productos", () => api);
+
+const inventario = vi.hoisted(() => ({
+  listarInventario: vi.fn(), registrarFicha: vi.fn(), consultarExistencias: vi.fn(),
+  listarMovimientos: vi.fn(), registrarMovimiento: vi.fn(),
+}));
+vi.mock("../../services/inventario", () => inventario);
 
 vi.mock("react-router-dom", () => ({
   Link: ({ children, to, className, title }) => (
@@ -72,24 +78,27 @@ describe("AdminProductos", () => {
   beforeEach(() => {
     localStorage.clear();
     window.scrollTo = vi.fn();
-  });
-
-  beforeEach(() => {
     sessionStorage.clear();
     token = prepararSesion("ADMIN").token;
     vi.resetAllMocks();
     for (const operacion of Object.values(api)) operacion.mockResolvedValue(null);
+    api.crearProducto.mockResolvedValue({ id: 99, nombre: "Huincha Nueva 5M" });
+    inventario.listarInventario.mockResolvedValue(productosPrueba.map((p) => ({
+      productoId: p.id, productoSku: "PROD-" + p.id, stockActual: p.stock, stockMinimo: 5,
+    })));
+    inventario.registrarFicha.mockResolvedValue({ productoId: 99, stockActual: 10 });
+    inventario.listarMovimientos.mockResolvedValue([]);
   });
 
   it("renderiza la tabla con los productos entregados", () => {
     render(<AdminProductos productos={productosPrueba} recargar={() => { }} />);
-    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
-    expect(screen.getByText("Taladro Percutor 20V")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Taladro Percutor 20V")).toBeInTheDocument();
   });
 
-  it("calcula y exhibe la cantidad de artículos con stock crítico (stock <= 5)", () => {
+  it("calcula y exhibe la cantidad de artículos con stock crítico (stock <= 5)", async () => {
     render(<AdminProductos productos={productosPrueba} recargar={() => { }} />);
-    const badgeCritico = screen.getAllByText("Crítico");
+    const badgeCritico = await screen.findAllByText("Crítico");
     expect(badgeCritico).toHaveLength(2);
   });
 
@@ -100,8 +109,8 @@ describe("AdminProductos", () => {
     const inputBuscador = screen.getByPlaceholderText(/buscar por nombre/i);
     await usuario.type(inputBuscador, "Martillo");
 
-    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
-    expect(screen.queryByText("Taladro Percutor 20V")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).queryByText("Taladro Percutor 20V")).not.toBeInTheDocument();
   });
 
   it("filtra productos por categoría al escribir el nombre de la categoría", async () => {
@@ -111,8 +120,8 @@ describe("AdminProductos", () => {
     const inputBuscador = screen.getByPlaceholderText(/buscar por nombre/i);
     await usuario.type(inputBuscador, "Manuales");
 
-    expect(screen.getByText("Martillo Galponero")).toBeInTheDocument();
-    expect(screen.queryByText("Sierra Circular")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Martillo Galponero")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).queryByText("Sierra Circular")).not.toBeInTheDocument();
   });
 
   it("muestra mensaje de búsqueda sin resultados", async () => {
@@ -132,7 +141,7 @@ describe("AdminProductos", () => {
 
     render(<AdminProductos productos={productosPrueba} recargar={recargarMock} />);
 
-    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    const botonesEliminar = screen.getAllByTitle("Retirar producto");
     await usuario.click(botonesEliminar[0]);
 
     expect(window.confirm).toHaveBeenCalled();
@@ -147,7 +156,7 @@ describe("AdminProductos", () => {
 
     render(<AdminProductos productos={productosPrueba} recargar={recargarMock} />);
 
-    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    const botonesEliminar = screen.getAllByTitle("Retirar producto");
     await usuario.click(botonesEliminar[0]);
 
     expect(window.confirm).toHaveBeenCalled();
@@ -205,12 +214,12 @@ describe("AdminProductos", () => {
 
 
     // Cerrar la alerta
-    const alerta = screen.getByText(/actualizado con éxito/i);
+    const alerta = screen.getByText(/información comercial actualizada/i);
     expect(alerta).toBeInTheDocument();
 
     const botonCerrarAlerta = screen.getByLabelText("Cerrar");
     await usuario.click(botonCerrarAlerta);
-    expect(screen.queryByText(/actualizado con éxito/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/información comercial actualizada/i)).not.toBeInTheDocument();
   });
 
   it("registra un producto nuevo cuando no se está editando", async () => {
@@ -223,11 +232,35 @@ describe("AdminProductos", () => {
     const botonGuardar = screen.getByRole("button", { name: /guardar producto/i });
     await usuario.click(botonGuardar);
 
-    expect(api.crearProducto).toHaveBeenCalledWith(expect.objectContaining({ nombre: "Huincha Nueva 5M" }), token);
+    expect(api.crearProducto).toHaveBeenCalledWith(expect.objectContaining({ nombre: "Huincha Nueva 5M", stock: 0 }), token);
     expect(recargarMock).toHaveBeenCalled();
 
 
-    expect(screen.getByText(/registrado con éxito/i)).toBeInTheDocument();
+    expect(inventario.registrarFicha).toHaveBeenCalledWith({ id: 99, nombre: "Huincha Nueva 5M" }, 10, token);
+    expect(screen.getByText(/producto e inventario registrados/i)).toBeInTheDocument();
+  });
+
+  it("conserva el producto y recupera una ficha tras perder la respuesta", async () => {
+    const usuario = userEvent.setup();
+    inventario.registrarFicha.mockRejectedValueOnce(Object.assign(new Error("Sin conexión"), { estado: 0 }));
+    inventario.consultarExistencias.mockResolvedValueOnce({ productoId: 99, stockActual: 10 });
+    render(<AdminProductos productos={productosPrueba} recargar={vi.fn()} />);
+
+    await usuario.click(screen.getByRole("button", { name: "Guardar Producto" }));
+    expect(await screen.findByText("Producto registrado y ficha recuperada.")).toBeInTheDocument();
+    expect(api.crearProducto).toHaveBeenCalledTimes(1);
+    expect(inventario.consultarExistencias).toHaveBeenCalledWith(99);
+  });
+
+  it("indica el producto existente cuando el alta de inventario queda pendiente", async () => {
+    const usuario = userEvent.setup();
+    inventario.registrarFicha.mockRejectedValueOnce(new Error("Inventario no disponible"));
+    inventario.consultarExistencias.mockRejectedValueOnce(Object.assign(new Error("Sin ficha"), { estado: 404 }));
+    render(<AdminProductos productos={productosPrueba} recargar={vi.fn()} />);
+
+    await usuario.click(screen.getByRole("button", { name: "Guardar Producto" }));
+    expect(await screen.findByText(/Producto #99 creado con inventario pendiente/)).toBeInTheDocument();
+    expect(api.crearProducto).toHaveBeenCalledTimes(1);
   });
 
   it("elimina el producto que estaba seleccionado en edición y limpia el formulario", async () => {
@@ -243,12 +276,12 @@ describe("AdminProductos", () => {
     expect(screen.getByText("Editar Producto: Martillo Galponero")).toBeInTheDocument();
 
     // Eliminar el mismo producto activo
-    const botonesEliminar = screen.getAllByTitle("Eliminar producto");
+    const botonesEliminar = screen.getAllByTitle("Retirar producto");
     await usuario.click(botonesEliminar[0]);
 
 
     expect(screen.queryByText("Editar Producto: Martillo Galponero")).not.toBeInTheDocument();
-    expect(screen.getByText("Producto eliminado correctamente.")).toBeInTheDocument();
+    expect(screen.getByText("Producto retirado del catálogo.")).toBeInTheDocument();
   });
 
   it("oculta los controles de edición y eliminación si el usuario tiene rol 'Vendedor'", () => {

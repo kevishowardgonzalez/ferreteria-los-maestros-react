@@ -6,6 +6,10 @@ import DetalleProducto from "./DetalleProducto";
 const api = vi.hoisted(() => ({ buscarProducto: vi.fn() }));
 vi.mock("../services/productos", () => api);
 
+vi.mock("../services/inventario", () => ({
+  consultarExistencias: vi.fn(async (id) => ({ stockActual: id === 1 ? 5 : 0, stockMinimo: 5 })),
+}));
+
 let mockId = "1";
 vi.mock("react-router-dom", () => ({
   useParams: () => ({ id: mockId }),
@@ -65,7 +69,7 @@ describe("DetalleProducto", () => {
     });
     render(<DetalleProducto />);
     await screen.findByRole("heading");
-    expect(screen.getByText(/5 unidades/i)).toBeInTheDocument();
+    expect(await screen.findByText(/5 unidades/i)).toBeInTheDocument();
   });
 
   it("muestra advertencia de producto sin stock cuando stock es 0", async () => {
@@ -77,7 +81,7 @@ describe("DetalleProducto", () => {
     });
     render(<DetalleProducto />);
     await screen.findByRole("heading");
-    expect(screen.getByText(/producto sin stock disponible/i)).toBeInTheDocument();
+    expect(await screen.findByText(/producto sin stock disponible/i)).toBeInTheDocument();
   });
 
   it("renderiza mensaje de error 'Producto no encontrado' para IDs inexistentes", async () => {
